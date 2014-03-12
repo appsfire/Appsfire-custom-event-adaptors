@@ -5,7 +5,7 @@ Appsfire's AdUnit (interstitial) integration with Burstly is quite easy. Burstly
 ## Getting Started with Appsfire
 The Appsfire iOS SDK is the cornerstone of the Appsfire network.
 
-It provides the functionalities for monetizing your mobile application: it facilitates inserting native mobile ads into you iOS application using native iOS APIs. You can choose one of our ad units (Sushi, Uramaki and Sashimi), or create a new custom ad format (based on the Sashimi Ad Unit). Be sure to read our [full documentation](http://docs.appsfire.com/sdk/ios/integration-reference/Introduction).
+It provides the functionalities for monetizing your mobile application: it facilitates inserting native mobile ads into you application using native APIs. You can choose one of our ad units (Sushi, Uramaki).
 
 It also helps you engage with your users by sending push and in-app notifications.
 
