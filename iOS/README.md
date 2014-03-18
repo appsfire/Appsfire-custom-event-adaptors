@@ -6,7 +6,6 @@ Here you can find:
 
 - [Appsfire MoPub iOS Mediation Adaptor](/AppsfireSDK-mopub)
 - [Appsfire AdMob iOS Mediation Adaptor](/AppsfireSDK-admob)
-- [Appsfire Burstly iOS Mediation Adaptor](/AppsfireSDK-burstly)
 
 Please refer to the README files.
 
