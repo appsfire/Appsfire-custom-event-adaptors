@@ -1,7 +1,7 @@
 /*!
  *  @header    AFAdMobCustomEventInterstitial.m
  *  @abstract  Appsfire AdMob Interstitial Custom Event class.
- *  @version   1.2
+ *  @version   1.3
  */
 
 /*
@@ -35,16 +35,26 @@
 #import "AppsfireAdSDK.h"
 #import "AppsfireAdTimerView.h"
 
+static NSTimeInterval const AFAdMobCustomEventInterstitialAdCheckInterval = 1.0;
+static NSTimeInterval const AFAdMobCustomEventInterstitialTimerInterval = 3.0;
+static NSUInteger const AFAdMobCustomEventInterstitialAdCheckTimeout = 30;
+
 @interface AFAdMobCustomEventInterstitial () <AppsfireAdSDKDelegate>
 
-@property (nonatomic, assign, readwrite) AFAdSDKModalType modalType;
-@property (nonatomic, assign, readwrite) BOOL shouldShowTimer;
+@property (nonatomic, assign) AFAdSDKModalType modalType;
+@property (nonatomic, assign) NSTimer *adCheckTimer;
+@property (nonatomic, assign) BOOL shouldShowTimer;
+@property (nonatomic, assign, getter=isDelegateAlreadyNotified) BOOL delegateAlreadyNotified;
+@property (nonatomic, assign) NSUInteger adCheckCount;
 
 // Server Parameters
 - (void)parseServerParameter:(NSString *)serverParameter;
 
 // Shows Appsfire interstitials if those are available.
 - (void)showAppsfireInterstitialsFromRootViewController:(UIViewController *)rootViewController;
+
+// Checks the availability of Ads.
+- (void)checkAdAvailability;
 
 @end
 
@@ -56,6 +66,10 @@
 #pragma mark - Dealloc
 
 - (void)dealloc {
+    
+    // Cancel any running timer.
+    [_adCheckTimer invalidate], _adCheckTimer = nil;
+    
     self.delegate = nil;
     [AppsfireAdSDK setDelegate:nil];
 }
@@ -63,6 +77,10 @@
 #pragma mark - GADCustomEventInterstitial
 
 - (void)requestInterstitialAdWithParameter:(NSString *)serverParameter label:(NSString *)serverLabel request:(GADCustomEventRequest *)request {
+    
+    // Variable init.
+    _adCheckCount = 0;
+    _delegateAlreadyNotified = NO;
     
     // Default values
     _modalType = AFAdSDKModalTypeSushi;
@@ -77,17 +95,51 @@
     // Tells Ad SDK to prepare, this method is automatically called during a modal ad request.
     [AppsfireAdSDK prepare];
     
+    // Check if ads are available.
+    [self checkAdAvailability];
+}
+
+- (void)presentFromRootViewController:(UIViewController *)rootViewController {
+    [self showAppsfireInterstitialsFromRootViewController:rootViewController];
+}
+
+- (void)checkAdAvailability {
+    
+    // Cancel any running timer.
+    [_adCheckTimer invalidate], _adCheckTimer = nil;
+    
+    // Timeout failsafe.
+    if (_adCheckCount >= AFAdMobCustomEventInterstitialAdCheckTimeout) {
+        
+        // We consider having no ads from now.
+        if ([self.delegate respondsToSelector:@selector(customEventInterstitial:didFailAd:)]) {
+            NSError *error = [NSError errorWithDomain:@"com.appsfire.sdk" code:AFSDKErrorCodeAdvertisingNoAd userInfo:@{NSLocalizedDescriptionKey : @"No Ads to display."}];
+            [self.delegate customEventInterstitial:self didFailAd:error];
+        }
+    }
+    
     // We need to know if we have available ads.
     AFAdSDKAdAvailability availability = [AppsfireAdSDK isThereAModalAdAvailableForType:_modalType];
     
     // Depending on the availability.
     switch (availability) {
+            
+        // If we are in a pending situation we fire a timer to retry every second.
+        case AFAdSDKAdAvailabilityPending: {
+            _adCheckTimer = [NSTimer scheduledTimerWithTimeInterval:AFAdMobCustomEventInterstitialAdCheckInterval target:self selector:@selector(checkAdAvailability) userInfo:nil repeats:NO];
+        } break;
+            
+        // If we have ads we inform the delegate.
         case AFAdSDKAdAvailabilityYes: {
-            if ([self.delegate respondsToSelector:@selector(customEventInterstitial:didReceiveAd:)]) {
+            if ([self.delegate respondsToSelector:@selector(customEventInterstitial:didReceiveAd:)] && !self.isDelegateAlreadyNotified) {
                 [self.delegate customEventInterstitial:self didReceiveAd:nil];
+                
+                // We prevent from notifying the delegate twice.
+                _delegateAlreadyNotified = YES;
             }
         } break;
             
+        // If we have no ads we inform the delegate.
         case AFAdSDKAdAvailabilityNo: {
             if ([self.delegate respondsToSelector:@selector(customEventInterstitial:didFailAd:)]) {
                 NSError *error = [NSError errorWithDomain:@"com.appsfire.sdk" code:AFSDKErrorCodeAdvertisingNoAd userInfo:@{NSLocalizedDescriptionKey : @"No Ads to display."}];
@@ -95,20 +147,22 @@
             }
         } break;
             
-        default:
-            break;
+        default: {
+        } break;
     }
+    
+    _adCheckCount++;
 }
 
-- (void)presentFromRootViewController:(UIViewController *)rootViewController {
-    [self showAppsfireInterstitialsFromRootViewController:rootViewController];
-}
 
 #pragma mark - AppsfireAdSDKDelegate
 
 - (void)modalAdIsReadyForRequest {
-    if ([self.delegate respondsToSelector:@selector(customEventInterstitial:didReceiveAd:)]) {
+    if ([self.delegate respondsToSelector:@selector(customEventInterstitial:didReceiveAd:)] && !self.isDelegateAlreadyNotified) {
         [self.delegate customEventInterstitial:self didReceiveAd:nil];
+        
+        // We prevent from notifying the delegate twice.
+        _delegateAlreadyNotified = YES;
     }
 }
 
@@ -171,9 +225,12 @@
         NSString *type = [params objectForKey:@"type"];
         if ([type isKindOfClass:NSString.class]) {
             
+            // Sushi
             if ([type isEqualToString:@"sushi"]) {
                 _modalType = AFAdSDKModalTypeSushi;
             }
+            
+            // Uramaki
             else if ([type isEqualToString:@"uramaki"]) {
                 _modalType = AFAdSDKModalTypeUraMaki;
             }
@@ -185,7 +242,6 @@
             _shouldShowTimer = [timer boolValue];
         }
     }
-    
 }
 
 #pragma mark - Show Interstitials
@@ -204,7 +260,7 @@
     // Showing a timer before presenting the Ad.
     if (_shouldShowTimer) {
         
-        [[[AppsfireAdTimerView alloc] initWithCountdownStart:3] presentWithCompletion:^(BOOL accepted) {
+        [[[AppsfireAdTimerView alloc] initWithCountdownStart:AFAdMobCustomEventInterstitialTimerInterval] presentWithCompletion:^(BOOL accepted) {
             if (accepted) {
                 [AppsfireAdSDK requestModalAd:_modalType withController:rootViewController];
             }

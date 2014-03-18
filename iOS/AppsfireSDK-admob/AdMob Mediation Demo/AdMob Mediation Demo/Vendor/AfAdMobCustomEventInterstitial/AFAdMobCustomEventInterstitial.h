@@ -1,7 +1,7 @@
 /*!
  *  @header    AFAdMobCustomEventInterstitial.h
  *  @abstract  Appsfire AdMob Interstitial Custom Event class.
- *  @version   1.2
+ *  @version   1.3
  */
 
 /*

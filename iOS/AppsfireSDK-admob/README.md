@@ -44,6 +44,9 @@ In order to get started, please be sure you've done the following:
 
 ##Release Notes
 
+**1.3**  
+Fixed an issue where AdMob would not get properly notified of absence of ads after a `AFAdSDKAdAvailabilityPending` availability status.
+
 **1.2**  
 Improved notification of AdMob when no ads are available.
 
