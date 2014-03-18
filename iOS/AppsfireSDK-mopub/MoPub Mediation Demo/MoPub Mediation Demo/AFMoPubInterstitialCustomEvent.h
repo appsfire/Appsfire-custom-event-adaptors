@@ -1,7 +1,7 @@
 /*!
  *  @header    AFMoPubInterstitialCustomEvent.h
  *  @abstract  Appsfire MoPub Interstitial Custom Event class.
- *  @version   1.2
+ *  @version   1.3
  */
 
 /*

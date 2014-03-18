@@ -42,6 +42,9 @@ In order to get started, please be sure you've done the following:
 
 ##Release Notes
 
+**1.3**  
+Fixed an issue where MoPub would not get properly notified of absence of ads after a `AFAdSDKAdAvailabilityPending` availability status.
+
 **1.2**  
 Improved notification of MoPub when no ads are available.
 
