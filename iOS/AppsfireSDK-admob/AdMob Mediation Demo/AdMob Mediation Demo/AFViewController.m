@@ -55,30 +55,6 @@
     [self loadInterstitial];
 }
 
-- (void)viewWillAppear:(BOOL)animated {
-    [super viewWillAppear:animated];
-}
-
-- (void)viewDidAppear:(BOOL)animated {
-    [super viewDidAppear:animated];
-}
-
-- (void)viewWillDisappear:(BOOL)animated {
-	[super viewWillDisappear:animated];
-}
-
-- (void)viewDidDisappear:(BOOL)animated {
-	[super viewDidDisappear:animated];
-}
-
-- (void)viewWillLayoutSubviews {
-    [super viewWillLayoutSubviews];
-}
-
-- (void)viewDidLayoutSubviews {
-    [super viewDidLayoutSubviews];
-}
-
 #pragma mark - AdMob
 
 - (void)loadInterstitial {
@@ -86,7 +62,7 @@
     self.interstitial = [[GADInterstitial alloc] init];
     
 #error Add your AdMob interstitial Unit Id
-    self.interstitial.adUnitID = @"MY_INTERSTITIAL_UNIT_ID";
+    self.interstitial.adUnitID = @"YOUR_INTERSTITIAL_UNIT_ID";
     
     // Loads an interstitial ad.
     [self.interstitial loadRequest:[GADRequest request]];
@@ -124,6 +100,12 @@
 
 - (void)interstitialDidDismissScreen:(GADInterstitial *)ad {
     NSLog(@"%s", __PRETTY_FUNCTION__);
+    
+    // Re-loading a new ad.
+    self.button.enabled = NO;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [self loadInterstitial];
+    });
 }
 
 - (void)interstitialWillLeaveApplication:(GADInterstitial *)ad {

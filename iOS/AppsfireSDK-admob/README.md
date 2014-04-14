@@ -42,6 +42,8 @@ In order to get started, please be sure you've done the following:
 
 4. You should be good to go after these steps. To make sure, you can **run** the AdMob Mediation Demo project with you AdMob interstitial Unit Id and see a test interstitial.
 
+**Note**: Please make sure to only allocate one interstitial at a time, otherwise you can end up having less events reported to AdMob.
+
 ##Release Notes
 
 **1.3**  
