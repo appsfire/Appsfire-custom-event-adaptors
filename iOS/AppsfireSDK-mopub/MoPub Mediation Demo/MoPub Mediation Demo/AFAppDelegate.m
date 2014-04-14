@@ -23,8 +23,8 @@
     //-------------------
     // Appsfire SDK Setup
     //-------------------
-#error Add your Appsfire API key below
-    NSString *apiKey = @"";
+//#error Add your Appsfire API key below
+    NSString *apiKey = @"80E22A704393457AF179C054E444A0FE";
     
     // The only mandatory code to use the Appsfire SDK if the connection to the API with your API Key.
     if ([AppsfireSDK connectWithAPIKey:apiKey afterDelay:1.0]) {

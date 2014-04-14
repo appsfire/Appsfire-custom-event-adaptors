@@ -1,32 +1,7 @@
 /*!
  *  @header    AFMoPubInterstitialCustomEvent.m
  *  @abstract  Appsfire MoPub Interstitial Custom Event class.
- *  @version   1.3
- */
-
-/*
- Copyright 2010-2014 Appsfire SAS. All rights reserved.
- 
- Redistribution and use in source and binary forms, without
- modification, are permitted provided that the following conditions are met:
- 
- 1. Redistributions of source code must retain the above copyright notice, this
- list of conditions and the following disclaimer.
- 
- 2. Redistributions in binary form must reproduce the above copyright notice,
- this list of conditions and the following disclaimer in the documentation
- and/or other materials provided with the distribution.
- 
- THIS SOFTWARE IS PROVIDED BY APPSFIRE SAS ``AS IS'' AND ANY EXPRESS OR
- IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
- MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
- EVENT SHALL APPSFIRE SAS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
- INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
- OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  @version   1.4
  */
 
 #import "AFMoPubInterstitialCustomEvent.h"
@@ -59,16 +34,6 @@ static NSUInteger const AFMoPubInterstitialCustomEventAdCheckTimeout = 30;
 @end
 
 @implementation AFMoPubInterstitialCustomEvent
-
-#pragma mark - Init & Dealloc
-
-- (void)dealloc {
-    
-    // Cancel any running timer.
-    [_adCheckTimer invalidate], _adCheckTimer = nil;
-    
-    [AppsfireAdSDK setDelegate:nil];
-}
 
 #pragma mark - Ad Request
 
@@ -120,12 +85,12 @@ static NSUInteger const AFMoPubInterstitialCustomEventAdCheckTimeout = 30;
     // Depending on the availability.
     switch (availability) {
             
-        // If we are in a pending situation we fire a timer to retry every second.
+            // If we are in a pending situation we fire a timer to retry every second.
         case AFAdSDKAdAvailabilityPending: {
             _adCheckTimer = [NSTimer scheduledTimerWithTimeInterval:AFMoPubInterstitialCustomEventAdCheckInterval target:self selector:@selector(checkAdAvailability) userInfo:nil repeats:NO];
         } break;
             
-        // If we have ads we inform the delegate.
+            // If we have ads we inform the delegate.
         case AFAdSDKAdAvailabilityYes: {
             if ([self.delegate respondsToSelector:@selector(interstitialCustomEvent:didLoadAd:)] && !self.isDelegateAlreadyNotified) {
                 [self.delegate interstitialCustomEvent:self didLoadAd:nil];
@@ -135,7 +100,7 @@ static NSUInteger const AFMoPubInterstitialCustomEventAdCheckTimeout = 30;
             }
         } break;
             
-        // If we have no ads we inform the delegate.
+            // If we have no ads we inform the delegate.
         case AFAdSDKAdAvailabilityNo: {
             if ([self.delegate respondsToSelector:@selector(interstitialCustomEvent:didFailToLoadAdWithError:)]) {
                 NSError *error = [NSError errorWithDomain:@"com.appsfire.sdk" code:AFSDKErrorCodeAdvertisingNoAd userInfo:@{NSLocalizedDescriptionKey : @"No Ads to display."}];
@@ -189,6 +154,12 @@ static NSUInteger const AFMoPubInterstitialCustomEventAdCheckTimeout = 30;
     if ([self.delegate respondsToSelector:@selector(interstitialCustomEventDidDisappear:)]) {
         [self.delegate interstitialCustomEventDidDisappear:self];
     }
+    
+    // Cancel any running timer.
+    [_adCheckTimer invalidate], _adCheckTimer = nil;
+    
+    // Setting the delegate to `nil` here because we don't know when the object is dealloaced.
+    [AppsfireAdSDK setDelegate:nil];
 }
 
 - (void)modalAdDidReceiveTapForDownload {

@@ -55,36 +55,12 @@
     [self loadInterstitial];
 }
 
-- (void)viewWillAppear:(BOOL)animated {
-    [super viewWillAppear:animated];
-}
-
-- (void)viewDidAppear:(BOOL)animated {
-    [super viewDidAppear:animated];
-}
-
-- (void)viewWillDisappear:(BOOL)animated {
-	[super viewWillDisappear:animated];
-}
-
-- (void)viewDidDisappear:(BOOL)animated {
-	[super viewDidDisappear:animated];
-}
-
-- (void)viewWillLayoutSubviews {
-    [super viewWillLayoutSubviews];
-}
-
-- (void)viewDidLayoutSubviews {
-    [super viewDidLayoutSubviews];
-}
-
 #pragma mark - MoPub
 
 - (void)loadInterstitial {
-#error Add your MoPub Ad Unit Id below.
+//#error Add your MoPub Ad Unit Id below.
     // Instantiate the interstitial using the class convenience method.
-    self.interstitial = [MPInterstitialAdController interstitialAdControllerForAdUnitId:@"INSERT_AD_UNIT_ID_HERE"];
+    self.interstitial = [MPInterstitialAdController interstitialAdControllerForAdUnitId:@"6f3b6688a09a4393a5508df6abef3461"];
     
     // Fetch the interstitial ad.
     [self.interstitial loadAd];
@@ -126,6 +102,12 @@
 
 - (void)interstitialDidDisappear:(MPInterstitialAdController *)interstitial {
     NSLog(@"%s", __PRETTY_FUNCTION__);
+    
+    // Re-loading a new ad.
+    self.button.enabled = NO;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [self loadInterstitial];
+    });
 }
 
 @end

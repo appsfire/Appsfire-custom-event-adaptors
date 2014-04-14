@@ -40,7 +40,12 @@ In order to get started, please be sure you've done the following:
     - Show the **Sushi** ad unit without the timer : `{"type" : "sushi", "timer" : 0}`  
     - Show the **Uramaki** ad unit with the timer : `{"type" : "uramaki", "timer" : 1}`  
 
+**Note**: Please make sure to only allocate one interstitial at a time, otherwise you can end up having less events reported to MoPub.
+
 ##Release Notes
+
+**1.4**  
+Fixed an issue when successively allocating several interstitials and where the Appsfire SDK would not properly forward events to MoPub.
 
 **1.3**  
 Fixed an issue where MoPub would not get properly notified of absence of ads after a `AFAdSDKAdAvailabilityPending` availability status.
