@@ -58,9 +58,9 @@
 #pragma mark - MoPub
 
 - (void)loadInterstitial {
-//#error Add your MoPub Ad Unit Id below.
+#error Add your MoPub Ad Unit Id below.
     // Instantiate the interstitial using the class convenience method.
-    self.interstitial = [MPInterstitialAdController interstitialAdControllerForAdUnitId:@"6f3b6688a09a4393a5508df6abef3461"];
+    self.interstitial = [MPInterstitialAdController interstitialAdControllerForAdUnitId:@"INSERT_AD_UNIT_ID_HERE"];
     
     // Fetch the interstitial ad.
     [self.interstitial loadAd];
