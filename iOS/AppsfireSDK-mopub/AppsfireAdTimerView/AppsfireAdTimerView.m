@@ -183,7 +183,7 @@
         [ kAppsfireAdTimerColorGray1 set ];
         
         //
-        [ [ NSString stringWithFormat:@"%d", countdownCurrent ] drawInRect:CGRectMake(0.0, floor(CGRectGetMidY(rect) - countdownFont.lineHeight / 2.0), CGRectGetWidth(rect), countdownFont.lineHeight) withFont:countdownFont lineBreakMode:NSLineBreakByCharWrapping alignment:NSTextAlignmentCenter ];
+        [ [ NSString stringWithFormat:@"%ld", (long)countdownCurrent ] drawInRect:CGRectMake(0.0, floor(CGRectGetMidY(rect) - countdownFont.lineHeight / 2.0), CGRectGetWidth(rect), countdownFont.lineHeight) withFont:countdownFont lineBreakMode:NSLineBreakByCharWrapping alignment:NSTextAlignmentCenter ];
     }
     CGContextRestoreGState(context);
     

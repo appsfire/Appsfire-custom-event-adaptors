@@ -28,7 +28,7 @@
 - (void)loadView {
     [super loadView];
     
-    // Configuring the view
+    // Configuring the view.
     self.view.backgroundColor = [UIColor whiteColor];
     
     // Button
@@ -44,23 +44,24 @@
                                     UIViewAutoresizingFlexibleBottomMargin);
     [self.view addSubview:self.button];
     
-    // We disable the button until we have an ad
+    // We disable the button until we have an ad.
     self.button.enabled = NO;
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    // Load MoPub Interstitial
+    // Load MoPub Interstitial.
     [self loadInterstitial];
 }
 
 #pragma mark - MoPub
 
 - (void)loadInterstitial {
+    
 #error Add your MoPub Ad Unit Id below.
     // Instantiate the interstitial using the class convenience method.
-    self.interstitial = [MPInterstitialAdController interstitialAdControllerForAdUnitId:@"INSERT_AD_UNIT_ID_HERE"];
+    self.interstitial = [MPInterstitialAdController interstitialAdControllerForAdUnitId:@"<MOPUB_AD_UNIT_ID>"];
     
     // Fetch the interstitial ad.
     [self.interstitial loadAd];
@@ -78,7 +79,7 @@
 - (void)interstitialDidLoadAd:(MPInterstitialAdController *)interstitial {
     NSLog(@"%s", __PRETTY_FUNCTION__);
     
-    // Enabling the button if the interstitial is ready
+    // Enabling the button if the interstitial is ready.
     if (self.interstitial.ready) {
         self.button.enabled = YES;
     }

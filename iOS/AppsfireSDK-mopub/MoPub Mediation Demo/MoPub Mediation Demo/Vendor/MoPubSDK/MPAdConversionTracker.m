@@ -11,14 +11,14 @@
 #import "MPGlobal.h"
 #import "MPLogging.h"
 #import "MPIdentityProvider.h"
-#import "MPInstanceProvider.h"
+#import "MPCoreInstanceProvider.h"
 
 #define MOPUB_CONVERSION_DEFAULTS_KEY @"com.mopub.conversion"
 
 @interface MPAdConversionTracker ()
 
 @property (nonatomic, retain) NSMutableData *responseData;
-@property (nonatomic, assign) int statusCode;
+@property (nonatomic, assign) NSInteger statusCode;
 
 - (NSURL *)URLForAppID:(NSString *)appID;
 
@@ -51,7 +51,7 @@
 {
     if (![[NSUserDefaults standardUserDefaults] boolForKey:MOPUB_CONVERSION_DEFAULTS_KEY]) {
         MPLogInfo(@"Tracking conversion");
-        NSMutableURLRequest *request = [[MPInstanceProvider sharedProvider] buildConfiguredURLRequestWithURL:[self URLForAppID:appID]];
+        NSMutableURLRequest *request = [[MPCoreInstanceProvider sharedProvider] buildConfiguredURLRequestWithURL:[self URLForAppID:appID]];
         self.responseData = [NSMutableData data];
         [NSURLConnection connectionWithRequest:request delegate:self];
     }

@@ -8,6 +8,7 @@
 #import "MPBannerAdManager.h"
 #import "MPAdServerURLBuilder.h"
 #import "MPInstanceProvider.h"
+#import "MPCoreInstanceProvider.h"
 #import "MPBannerAdManagerDelegate.h"
 #import "MPError.h"
 #import "MPTimer.h"
@@ -25,6 +26,7 @@
 @property (nonatomic, retain) MPTimer *refreshTimer;
 @property (nonatomic, assign) BOOL adActionInProgress;
 @property (nonatomic, assign) BOOL automaticallyRefreshesContents;
+@property (nonatomic, assign) BOOL hasRequestedAtLeastOneAd;
 @property (nonatomic, assign) UIInterfaceOrientation currentOrientation;
 
 - (void)loadAdWithURL:(NSURL *)URL;
@@ -50,7 +52,7 @@
     if (self) {
         self.delegate = delegate;
 
-        self.communicator = [[MPInstanceProvider sharedProvider] buildMPAdServerCommunicatorWithDelegate:self];
+        self.communicator = [[MPCoreInstanceProvider sharedProvider] buildMPAdServerCommunicatorWithDelegate:self];
 
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(applicationWillEnterForeground)
@@ -92,6 +94,10 @@
 
 - (void)loadAd
 {
+    if (!self.hasRequestedAtLeastOneAd) {
+        self.hasRequestedAtLeastOneAd = YES;
+    }
+
     if (self.loading) {
         MPLogWarn(@"Banner view (%@) is already loading an ad. Wait for previous load to finish.", [self.delegate adUnitId]);
         return;
@@ -107,7 +113,7 @@
 
 - (void)applicationWillEnterForeground
 {
-    if (self.automaticallyRefreshesContents) {
+    if (self.automaticallyRefreshesContents && self.hasRequestedAtLeastOneAd) {
         [self loadAdWithURL:nil];
     }
 }
@@ -168,7 +174,7 @@
     NSTimeInterval timeInterval = self.requestingConfiguration ? self.requestingConfiguration.refreshInterval : DEFAULT_BANNER_REFRESH_INTERVAL;
 
     if (timeInterval > 0) {
-        self.refreshTimer = [[MPInstanceProvider sharedProvider] buildMPTimerWithTimeInterval:timeInterval
+        self.refreshTimer = [[MPCoreInstanceProvider sharedProvider] buildMPTimerWithTimeInterval:timeInterval
                                                                                        target:self
                                                                                      selector:@selector(refreshTimerDidFire)
                                                                                       repeats:NO];

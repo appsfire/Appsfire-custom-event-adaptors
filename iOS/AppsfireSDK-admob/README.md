@@ -13,20 +13,28 @@ It also helps you engage with your users by sending push and in-app notification
 - Please visit our [online documentation](http://docs.appsfire.com/sdk/ios/integration-reference/Introduction) to learn how to integrate our SDK into your app.<br />
 - Check out the full [API specification](http://docs.appsfire.com/sdk/ios/api-reference/) to have a detailed understanding of our SDK.
 
-## Installation
+## Requirements
+In order to use the latest version of the AdMob adapter you will need the version [**v2.4.0**](https://github.com/appsfire/Appsfire-iOS-SDK/releases/tag/2.4.0) of the Appsfire SDK.
 
+## Installation
 In order to get started, please be sure you've done the following:
 
 1. Registered on [Appsfire website](http://www.appsfire.com/) and accepted our Terms Of Use
-2. Registered your app on our [Dashboard](http://dashboard.appsfire.com/) and generated an SDK key for your app
-3. Grabbed our latest version of the SDK, either using CocoaPods, or downloading the SDK from our [Dashboard](http://dashboard.appsfire.com/app/doc)
+1. Registered your app on our [Dashboard](http://dashboard.appsfire.com/) and generated an SDK key for your app
+1. Grabbed our latest version of the SDK, either using CocoaPods, or downloading the SDK from our [Dashboard](http://dashboard.appsfire.com/app/doc)
 
-## Quick Start
-1. First you need to **install the Appsfire SDK** in order to use the Appsfire AdUnit. If you are not familiar with it, you can take a look at the AdMob Mediation Demo project bundled in this package.
+##Quick Start
+1. First you need to [**install the Appsfire SDK**](http://docs.appsfire.com/sdk/ios/integration-reference/Setup_Your_Project). If you are not familiar with it, you can take a look at the AdMob Mediation Demo project bundled in this package.
 
-2. In your Xcode project, **import** the two following files : `AFAdMobCustomEventInterstitial.h` and `AFAdMobCustomEventInterstitial.m`. This is the pre-configured class which will be automatically instantiated by the AdMob SDK. The procedure to implement it is described in the [AdMob guide](https://developers.google.com/mobile-ads-sdk/docs/admob/mediation#ios-customevents).
+1. In your Xcode project, **import** the following files :
+  - `AFAdMobCustomEventInterstitial/AFAdMobCustomEventInterstitial.h`
+  - `AFAdMobCustomEventInterstitial/AFAdMobCustomEventInterstitial.m`
+  - `AppsfireAdTimerView/AppsfireAdTimerView.h`
+  - `AppsfireAdTimerView/AppsfireAdTimerView.m`
 
-3. On the AdMob web interface, **create a new network** in the Monetize section. A popup will be presented to you where you can pick a network, instead click on *Custom event* and enter `AFAdMobCustomEventInterstitial` in the *Class name* field. In the *Label* field enter something that will allow to easily indentify the Appsfire AdUnit. In order to choose which Ad unit you want to display, you also need to add a *Parameter*. This is simply a JSON payload.
+  `AFAdMobCustomEventInterstitial` is a pre-configured class which will be automatically instantiated by the AdMob SDK. The procedure to integrate it is described in the [AdMob guide](https://developers.google.com/mobile-ads-sdk/docs/admob/mediation#ios-customevents).
+
+1. On the AdMob web interface, **create a new network** in the Monetize section. A popup will be presented to you where you can pick a network, instead click on *Custom event* and enter `AFAdMobCustomEventInterstitial` in the *Class name* field. In the *Label* field enter something that will allow to easily identify the Appsfire AdUnit. In order to choose which Ad unit you want to display, you also need to add a *Parameter*. This is simply a JSON payload.
 
     You can specify the type of the Ad Unit with the `type` key and the 2 possible choices are:  
     - `sushi`  
@@ -40,11 +48,14 @@ In order to get started, please be sure you've done the following:
 
     If nothing is entered in the parameter, you will see the **Sushi** ad unit without the timer.
 
-4. You should be good to go after these steps. To make sure, you can **run** the AdMob Mediation Demo project with you AdMob interstitial Unit Id and see a test interstitial.
+1. You should be good to go after these steps. To make sure, you can **run** the AdMob Mediation Demo project with you AdMob interstitial Unit Id and see a test interstitial.
 
 **Note**: Please make sure to only allocate one interstitial at a time, otherwise you can end up having less events reported to AdMob.
 
 ##Release Notes
+
+**1.4**  
+Updated the adapter to support new version of the Appsfire SDK (2.4.0).
 
 **1.3**  
 Fixed an issue where AdMob would not get properly notified of absence of ads after a `AFAdSDKAdAvailabilityPending` availability status.

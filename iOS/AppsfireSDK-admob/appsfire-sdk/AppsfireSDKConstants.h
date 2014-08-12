@@ -1,31 +1,70 @@
 /*!
  *  @header    AppsfireSDKConstants.h
  *  @abstract  Appsfire SDK Constants Header
- *  @version   2.3.1
+ *  @version   2.4.0
  */
 
+#import <Foundation/NSObject.h>
+#include <CoreGraphics/CGGeometry.h>
+
 /*!
- *  @brief Names of notifications you can observe in Appsfire SDK
+ *  @brief Names of parameters you can use in the initialization method.
+ *  @since 2.4
+ */
+
+/** initialization delay. must be a NSNumber */
+extern NSString* const kAFSDKInitDelay;
+
+
+/*!
+ *  @brief Names of notifications you can observe in Appsfire SDK.
  *  @since 2.0
  */
 
 /** sdk is initializing */
-#define kAFSDKIsInitializing                @"AFSDKisInitializing"
+extern NSString* const kAFSDKIsInitializing;
 
 /** sdk is initialized */
-#define kAFSDKIsInitialized                 @"AFSDKisInitialized"
+extern NSString* const kAFSDKIsInitialized;
 
 /** notifications count was updated */
-#define kAFSDKNotificationsNumberChanged    @"AFSDKNotificationsNumberChanged"
-
-/** dictionary (localized strings) is updated */
-#define kAFSDKDictionaryUpdated             @"AFSDKdictionaryUpdated"
+extern NSString* const kAFSDKNotificationsNumberChanged;
 
 /** panel (for notifications or feedback) was presented */
-#define kAFSDKPanelWasPresented             @"AFSDKPanelWasPresented"
+extern NSString* const kAFSDKPanelWasPresented;
 
 /** panel (for notifications or feedback) was dismissed */
-#define kAFSDKPanelWasDismissed             @"AFSDKPanelWasDismissed"
+extern NSString* const kAFSDKPanelWasDismissed;
+
+/** dictionary (localized strings) is updated */
+extern NSString* const kAFSDKDictionaryUpdated __deprecated_msg("We plan to remove this notification in a future release. If you still find an interest in using it, please contact us!");
+
+
+/*!
+ *  @brief Predefined acceptable sizes of the banner.
+ *  @since 2.4
+ */
+
+/** iPhone portrait banner size of 320pt x 50pt */
+extern CGSize const kAFAdSDKBannerSize320x50;
+
+/** iPhone landscape banner size of 480pt x 32pt */
+extern CGSize const kAFAdSDKBannerSize480x32;
+
+
+/*!
+ *  @brief Predefined acceptable heights of the banner in full width case.
+ *  @since 2.4
+ */
+
+/** iPhone portrait banner height of 50pt */
+extern CGFloat const kAFAdSDKBannerHeight50;
+
+/** iPhone landscape banner height of 32pt */
+extern CGFloat const kAFAdSDKBannerHeight32;
+
+/** iPad portrait and landscape banner height of 66pt */
+extern CGFloat const kAFAdSDKBannerHeight66;
 
 
 /*!
@@ -47,7 +86,7 @@ typedef NS_OPTIONS(NSUInteger, AFSDKFeature) {
 
 
 /*!
- *  @brief Enum for deciding appsfire sdk presentation style.
+ *  @brief Enum for deciding the presentation style of the panel (engage sdk).
  *
  *  @note Embedded display allows users to see your application behind.
  *  Fullscreen is like its name, users won't see your application and will be immersed into the sdk.
@@ -63,7 +102,7 @@ typedef NS_ENUM(NSUInteger, AFSDKPanelStyle) {
 
 
 /*!
- *  @brief Enum for deciding appsfire sdk content type.
+ *  @brief Enum for deciding the content type of the panel (engage sdk).
  *  @since 2.0
  *
  *  @note Default displays by default the notifications, but the user can send a feedback too thanks to a button.
@@ -78,7 +117,7 @@ typedef NS_ENUM(NSUInteger, AFSDKPanelContent) {
 
 
 /*!
- *  @brief Enum for specifying the modal type.
+ *  @brief Enum for specifying the modal type (monetization sdk).
  *  @since 2.1
  */
 typedef NS_ENUM(NSUInteger, AFAdSDKModalType) {
@@ -90,7 +129,7 @@ typedef NS_ENUM(NSUInteger, AFAdSDKModalType) {
 
 
 /*!
- *  @brief Enum for specifying the sashimi format.
+ *  @brief Enum for specifying the sashimi format (monetization sdk).
  *  @since 2.2
  */
 typedef NS_ENUM(NSUInteger, AFAdSDKSashimiFormat) {
@@ -102,7 +141,7 @@ typedef NS_ENUM(NSUInteger, AFAdSDKSashimiFormat) {
 
 
 /*!
- *  @brief Enum for specifying the ad availability.
+ *  @brief Enum for specifying the ad availability (monetization sdk).
  *  @since 2.2
  */
 typedef NS_ENUM(NSUInteger, AFAdSDKAdAvailability) {
@@ -120,7 +159,6 @@ typedef NS_ENUM(NSUInteger, AFAdSDKAdAvailability) {
  *  @since 2.0
  */
 typedef NS_ENUM(NSUInteger, AFSDKErrorCode) {
-    
     // General
     /** Unknown */
     AFSDKErrorCodeUnknown,
@@ -130,6 +168,12 @@ typedef NS_ENUM(NSUInteger, AFSDKErrorCode) {
     AFSDKErrorCodeInternetNotReachable,
     /** You need to set the application delegate to proceed */
     AFSDKErrorCodeNeedsApplicationDelegate,
+    
+    // Initialization
+    /** Missing the SDK Token */
+    AFSDKErrorCodeInitializationMissingAPIKey,
+    /** Missing the Features bitmask */
+    AFSDKErrorCodeInitializationMissingFeatures,
     
     // Advertising sdk
     /** No ad available */
@@ -145,6 +189,41 @@ typedef NS_ENUM(NSUInteger, AFSDKErrorCode) {
     /** The panel is already displayed */
     AFSDKErrorCodePanelAlreadyDisplayed,
     /** The notification wasn't found */
-    AFSDKErrorCodeOpenNotificationNotFound
+    AFSDKErrorCodeOpenNotificationNotFound,
     
+    // In-app purchase
+    /** The property object is not valid */
+    AFSDKErrorCodeIAPPropertyNotValid,
+    /** The property object is missing a title attribute */
+    AFSDKErrorCodeIAPTitleMissing,
+    /** The property object is missing a message attribute */
+    AFSDKErrorCodeIAPMessageMissing,
+    /** The property object is missing a cancel button title attribute */
+    AFSDKErrorCodeIAPCancelButtonTitleMissing,
+    /** The property object is missing a buy button title attribute */
+    AFSDKErrorCodeIAPBuyButtonTitleMissing,
+    /** The property object is missing a buy block handler */
+    AFSDKErrorCodeIAPBuyBlockMissing,
+    
+    // Mediation sdk
+    /** The placement request failed. */
+    AFSDKErrorCodeMediationRequestFailed,
+    /** The placement id is not valid. */
+    AFSDKErrorCodeMediationAdPlacementIdNotValid,
+    /** The payload received for the placement id is not valid */
+    AFSDKErrorCodeMediationPayloadNotValid,
+    /** The received custom class does not exist */
+    AFSDKErrorCodeMediationCustomClassNotFound,
+    /** The received custom class does not conform to protocol */
+    AFSDKErrorCodeMediationCustomClassNotConformToProtocol,
+    /** The received placement id does not have any ads to show */
+    AFSDKErrorCodeMediationNoAds,
+    /** The ad request timed out */
+    AFSDKErrorCodeMediationAdRequestTimeout,
+    /** The interstitial has expired, you need to create a new one */
+    AFSDKErrorCodeMediationInterstitialExpired,
+    /** The interstitial has already been used, you need to create a new one */
+    AFSDKErrorCodeMediationInterstitialAlreadyUsed,
+    /** The size of the banner does not fit the destination container view */
+    AFSDKErrorCodeMediationBannerSizeMismatch
 };

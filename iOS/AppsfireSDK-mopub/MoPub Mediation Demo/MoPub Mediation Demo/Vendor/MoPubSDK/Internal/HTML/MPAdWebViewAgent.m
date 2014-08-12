@@ -9,12 +9,21 @@
 #import "MPAdConfiguration.h"
 #import "MPGlobal.h"
 #import "MPLogging.h"
-#import "CJSONDeserializer.h"
 #import "MPAdDestinationDisplayAgent.h"
 #import "NSURL+MPAdditions.h"
 #import "UIWebView+MPAdditions.h"
 #import "MPAdWebView.h"
 #import "MPInstanceProvider.h"
+#import "MPCoreInstanceProvider.h"
+#import "MPUserInteractionGestureRecognizer.h"
+#import "NSJSONSerialization+MPAdditions.h"
+#import "NSURL+MPAdditions.h"
+
+#ifndef NSFoundationVersionNumber_iOS_6_1
+#define NSFoundationVersionNumber_iOS_6_1 993.00
+#endif
+
+#define MPOffscreenWebViewNeedsRenderingWorkaround() (floor(NSFoundationVersionNumber) > NSFoundationVersionNumber_iOS_6_1)
 
 NSString * const kMoPubURLScheme = @"mopub";
 NSString * const kMoPubCloseHost = @"close";
@@ -22,12 +31,14 @@ NSString * const kMoPubFinishLoadHost = @"finishLoad";
 NSString * const kMoPubFailLoadHost = @"failLoad";
 NSString * const kMoPubCustomHost = @"custom";
 
-@interface MPAdWebViewAgent ()
+@interface MPAdWebViewAgent () <UIGestureRecognizerDelegate>
 
 @property (nonatomic, retain) MPAdConfiguration *configuration;
 @property (nonatomic, retain) MPAdDestinationDisplayAgent *destinationDisplayAgent;
 @property (nonatomic, assign) BOOL shouldHandleRequests;
 @property (nonatomic, retain) id<MPAdAlertManagerProtocol> adAlertManager;
+@property (nonatomic, assign) BOOL userInteractedWithWebView;
+@property (nonatomic, retain) MPUserInteractionGestureRecognizer *userInteractionRecognizer;
 
 - (void)performActionForMoPubSpecificURL:(NSURL *)URL;
 - (BOOL)shouldIntercept:(NSURL *)URL navigationType:(UIWebViewNavigationType)navigationType;
@@ -45,23 +56,33 @@ NSString * const kMoPubCustomHost = @"custom";
 @synthesize shouldHandleRequests = _shouldHandleRequests;
 @synthesize view = _view;
 @synthesize adAlertManager = _adAlertManager;
+@synthesize userInteractedWithWebView = _userInteractedWithWebView;
+@synthesize userInteractionRecognizer = _userInteractionRecognizer;
 
 - (id)initWithAdWebViewFrame:(CGRect)frame delegate:(id<MPAdWebViewAgentDelegate>)delegate customMethodDelegate:(id)customMethodDelegate;
 {
     self = [super init];
     if (self) {
         self.view = [[MPInstanceProvider sharedProvider] buildMPAdWebViewWithFrame:frame delegate:self];
-        self.destinationDisplayAgent = [[MPInstanceProvider sharedProvider] buildMPAdDestinationDisplayAgentWithDelegate:self];
+        self.destinationDisplayAgent = [[MPCoreInstanceProvider sharedProvider] buildMPAdDestinationDisplayAgentWithDelegate:self];
         self.delegate = delegate;
         self.customMethodDelegate = customMethodDelegate;
         self.shouldHandleRequests = YES;
-        self.adAlertManager = [[MPInstanceProvider sharedProvider] buildMPAdAlertManagerWithDelegate:self];
+        self.adAlertManager = [[MPCoreInstanceProvider sharedProvider] buildMPAdAlertManagerWithDelegate:self];
+
+        self.userInteractionRecognizer = [[[MPUserInteractionGestureRecognizer alloc] initWithTarget:self action:@selector(handleInteraction:)] autorelease];
+        self.userInteractionRecognizer.cancelsTouchesInView = NO;
+        [self.view addGestureRecognizer:self.userInteractionRecognizer];
+        self.userInteractionRecognizer.delegate = self;
     }
     return self;
 }
 
 - (void)dealloc
 {
+    self.userInteractionRecognizer.delegate = nil;
+    [self.userInteractionRecognizer removeTarget:self action:nil];
+    self.userInteractionRecognizer = nil;
     self.adAlertManager.targetAdView = nil;
     self.adAlertManager.delegate = nil;
     self.adAlertManager = nil;
@@ -72,6 +93,20 @@ NSString * const kMoPubCustomHost = @"custom";
     self.view.delegate = nil;
     self.view = nil;
     [super dealloc];
+}
+
+- (void)handleInteraction:(UITapGestureRecognizer *)sender
+{
+    if (sender.state == UIGestureRecognizerStateEnded) {
+        self.userInteractedWithWebView = YES;
+    }
+}
+
+#pragma mark - <UIGestureRecognizerDelegate>
+
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer;
+{
+    return YES;
 }
 
 #pragma mark - <MPAdAlertManagerDelegate>
@@ -104,10 +139,15 @@ NSString * const kMoPubCustomHost = @"custom";
         }
     }
 
+    // excuse interstitials from user tapped check since it's already a takeover experience
+    // and certain videos may delay tap gesture recognition
+    if (configuration.adType == MPAdTypeInterstitial) {
+        self.userInteractedWithWebView = YES;
+    }
+
     [self.view mp_setScrollable:configuration.scrollable];
     [self.view disableJavaScriptDialogs];
-    [self.view loadHTMLString:[configuration adResponseHTMLString]
-                         baseURL:nil];
+    [self.view loadHTMLString:[configuration adResponseHTMLString] baseURL:nil];
 
     [self initAdAlertManager];
 }
@@ -126,13 +166,13 @@ NSString * const kMoPubCustomHost = @"custom";
     }
 }
 
-- (void)stopHandlingRequests
+- (void)disableRequestHandling
 {
     self.shouldHandleRequests = NO;
     [self.destinationDisplayAgent cancel];
 }
 
-- (void)continueHandlingRequests
+- (void)enableRequestHandling
 {
     self.shouldHandleRequests = YES;
 }
@@ -176,7 +216,8 @@ NSString * const kMoPubCustomHost = @"custom";
         [self interceptURL:URL];
         return NO;
     } else {
-        return YES;
+        // don't handle any deep links without user interaction
+        return self.userInteractedWithWebView || [URL mp_isSafeForLoadingWithoutUserAction];
     }
 }
 
@@ -214,9 +255,11 @@ NSString * const kMoPubCustomHost = @"custom";
     if ([self.customMethodDelegate respondsToSelector:zeroArgumentSelector]) {
         [self.customMethodDelegate performSelector:zeroArgumentSelector];
     } else if ([self.customMethodDelegate respondsToSelector:oneArgumentSelector]) {
-        CJSONDeserializer *deserializer = [CJSONDeserializer deserializerWithNullObject:NULL];
         NSData *data = [[queryParameters objectForKey:@"data"] dataUsingEncoding:NSUTF8StringEncoding];
-        NSDictionary *dataDictionary = [deserializer deserializeAsDictionary:data error:NULL];
+        NSDictionary *dataDictionary = nil;
+        if (data) {
+            dataDictionary = [NSJSONSerialization mp_JSONObjectWithData:data options:NSJSONReadingMutableContainers clearNullObjects:YES error:nil];
+        }
 
         [self.customMethodDelegate performSelector:oneArgumentSelector
                                         withObject:dataDictionary];
@@ -229,7 +272,9 @@ NSString * const kMoPubCustomHost = @"custom";
 #pragma mark - URL Interception
 - (BOOL)shouldIntercept:(NSURL *)URL navigationType:(UIWebViewNavigationType)navigationType
 {
-    if (!(self.configuration.shouldInterceptLinks)) {
+    if ([URL mp_hasTelephoneScheme] || [URL mp_hasTelephonePromptScheme]) {
+        return YES;
+    } else if (!(self.configuration.shouldInterceptLinks)) {
         return NO;
     } else if (navigationType == UIWebViewNavigationTypeLinkClicked) {
         return YES;
@@ -300,6 +345,23 @@ NSString * const kMoPubCustomHost = @"custom";
                                       @".setAttribute('content', 'width=%f;', false);",
                                       self.view.frame.size.width];
     [self.view stringByEvaluatingJavaScriptFromString:viewportUpdateScript];
+
+    // XXX: In iOS 7, off-screen UIWebViews will fail to render certain image creatives.
+    // Specifically, creatives that only contain an <img> tag whose src attribute uses a 302
+    // redirect will not be rendered at all. One workaround is to temporarily change the web view's
+    // internal contentInset property; this seems to force the web view to re-draw.
+    if (MPOffscreenWebViewNeedsRenderingWorkaround()) {
+        if ([self.view respondsToSelector:@selector(scrollView)]) {
+            UIScrollView *scrollView = self.view.scrollView;
+            UIEdgeInsets originalInsets = scrollView.contentInset;
+            UIEdgeInsets newInsets = UIEdgeInsetsMake(originalInsets.top + 1,
+                                                      originalInsets.left,
+                                                      originalInsets.bottom,
+                                                      originalInsets.right);
+            scrollView.contentInset = newInsets;
+            scrollView.contentInset = originalInsets;
+        }
+    }
 }
 
 @end

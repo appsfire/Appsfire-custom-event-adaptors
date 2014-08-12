@@ -1,10 +1,11 @@
 /*!
  *  @header    AFAdSDKUdonNoodleControl.h
  *  @abstract  Udon Noodle Control Header file.
- *  @version   2.3.1
+ *  @version   2.4.0
  */
 
-#import <UIKit/UIKit.h>
+#import <UIKit/UIControl.h>
+#import <UIKit/UIScrollView.h>
 #import "AFAdSDKSashimiMinimalView.h"
 
 /*!
@@ -13,6 +14,7 @@
  * @since 2.3.0
  */
 typedef NS_ENUM(NSUInteger, AFAdSDKUNControlState) {
+    
     /*!
      * Undefined state of the Udon Noodle control.
      *
@@ -41,6 +43,7 @@ typedef NS_ENUM(NSUInteger, AFAdSDKUNControlState) {
  * @since 2.3.0
  */
 typedef NS_ENUM(NSUInteger, AFAdSDKUNControlStyle) {
+    
     /*!
      * Light style of the Udon Noodle control.
      *
@@ -56,15 +59,36 @@ typedef NS_ENUM(NSUInteger, AFAdSDKUNControlStyle) {
     AFAdSDKUNControlStyleDark
 };
 
+/*!
+ * Enum defining the different possible scroll dismiss styles of the control.
+ *
+ * @since 2.4.0
+ */
+typedef NS_ENUM(NSUInteger, AFAdSDKUNControlScrollDismissStyle) {
+    
+    /*!
+     * Scale dismiss style of the Udon Noodle control when scrolled up.
+     *
+     * @since 2.4.0
+     */
+    AFAdSDKUNControlScrollDismissStyleScale = 0,
+    
+    /*!
+     * Push dismiss style of the Udon Noodle control when scrolled up.
+     *
+     * @since 2.4.0
+     */
+    AFAdSDKUNControlScrollDismissStylePush
+};
+
 @protocol AFAdSDKUdonNoodleControlDelegate;
 
 /*!
- * `AFAdSDKUdonNoodleControl` is an API compatible replacement of `UIRefreshControl` for iOS 5.0+
+ * AFAdSDKUdonNoodleControl is an API compatible replacement of UIRefreshControl for iOS 5.0+
  * which uses the Appsfire Sashimi format to display advertisement in the refresh control view on
- * top of a `UIScrollView` (can be a `UITableView` for instance).
+ * top of a UIScrollView (can be a UITableView for instance).
  */
 @interface AFAdSDKUdonNoodleControl : UIControl
-
 
 /*!
  * The object that acts as the delegate of the receiving Udon Noodle control.
@@ -84,14 +108,28 @@ typedef NS_ENUM(NSUInteger, AFAdSDKUNControlStyle) {
  * The tint color for the refresh control.
  *
  * @discussion The default value of this property is nil.
+ *
  * @since 2.3.0
  */
 @property (nonatomic, strong, readwrite) UIColor *color;
 
 /*!
+ * The array containing the strings used while the refresh control is in the
+ * AFAdSDKUNControlStateRefreshing state.
+ *
+ * @note During the refresh, one of the strings will be picked up randomly.
+ *
+ * @see AFAdSDKUNControlState
+ *
+ * @since 2.4.0
+ */
+@property (nonatomic, strong, readwrite) NSArray *refreshingStrings;
+
+/*!
  * An Enum value reflecting the internal state of the Udon Noodle control.
  *
- * @see `AFAdSDKUNControlState`
+ * @see AFAdSDKUNControlState
+ *
  * @since 2.3.0
  */
 @property (nonatomic, assign, readonly) AFAdSDKUNControlState controlState;
@@ -99,41 +137,54 @@ typedef NS_ENUM(NSUInteger, AFAdSDKUNControlStyle) {
 /*!
  * An Enum value to set the coloring style of the control.
  *
- * @see `AFAdSDKUNControlStyle`
+ * @see AFAdSDKUNControlStyle
+ *
  * @since 2.3.0
  */
 @property (nonatomic, assign, readwrite) AFAdSDKUNControlStyle style;
 
 /*!
+ * An Enum value to set the scroll dismiss style of the control.
+ *
+ * @note This property controls the dismiss animation when an ad is visible and the user scrolls up
+ * to dismiss. Default is AFAdSDKUNControlScrollDismissStyleScale.
+ *
+ * @see AFAdSDKUNControlScrollDismissStyle
+ *
+ * @since 2.4.0
+ */
+@property (nonatomic, assign, readwrite) AFAdSDKUNControlScrollDismissStyle scrollDismissStyle;
+
+/*!
  * Default top content inset.
  *
- * @note    If the you set a top `contentInset` of your `UIScrollView` you might want to set the
- *          same value to `defaultTopContentInset`.
+ * @note If the you set a top contentInset of your UIScrollView you might want to set the same 
+ * value to defaultTopContentInset.
  *
  * @since 2.3.0
  */
 @property (nonatomic, assign, readwrite) CGFloat defaultTopContentInset;
 
 /*!
- * Default top content offset.
- *
- * @note    Useful on iOS 7.0+ when the `UIScrollView` is embedded in a view controller when the extended
- *          edges value `edgesForExtendedLayout` is equal to `UIRectEdgeTop` or `UIRectEdgeAll`. In
- *          this case the top `contentOffset` is equal to topLayoutGuide.length (64pt in portrait).
- *          The following code sample allows you to adjust the top content offset with rotation support:
- *
- *          // In your view controller subclass.
- *          - (void)viewDidLayoutSubviews {
- *              [super viewDidLayoutSubviews];
- *
- *              // Udon Noodle adjustment.
- *              if ([self respondsToSelector:@selector(topLayoutGuide)]) {
- *                  CGFloat topOffset = self.topLayoutGuide.length;
- *                  _udonNoodleControl.defaultTopContentOffset = topOffset;
- *              }
- *          }
- *
- * @since 2.3.0
+ Default top content offset.
+
+ @note Useful on iOS 7.0+ when the UIScrollView is embedded in a view controller when the extended 
+ edges value edgesForExtendedLayout is equal to UIRectEdgeTop or UIRectEdgeAll. In this case 
+ the top contentOffset is equal to topLayoutGuide.length (64pt in portrait).
+ The following code sample allows you to adjust the top content offset with rotation support:
+ 
+     // In your view controller subclass.
+     - (void)viewDidLayoutSubviews {
+         [super viewDidLayoutSubviews];
+
+         // Udon Noodle adjustment.
+         if ([self respondsToSelector:@selector(topLayoutGuide)]) {
+             CGFloat topOffset = self.topLayoutGuide.length;
+             _udonNoodleControl.defaultTopContentOffset = topOffset;
+         }
+     }
+ 
+ @since 2.3.0
  */
 @property (nonatomic, assign, readwrite) CGFloat defaultTopContentOffset;
 
@@ -147,7 +198,8 @@ typedef NS_ENUM(NSUInteger, AFAdSDKUNControlStyle) {
 /*!
  * Initializes and returns a standard Udon Noodle control.
  *
- * @param scrollView The `UIScrollView` used to trigger the Udon Noodle control.
+ * @param scrollView The UIScrollView used to trigger the Udon Noodle control.
+ *
  * @since 2.3.0
  */
 - (id)initWithScrollView:(UIScrollView *)scrollView;
@@ -155,13 +207,12 @@ typedef NS_ENUM(NSUInteger, AFAdSDKUNControlStyle) {
 /*!
  * Tells the control that a refresh operation was started programmatically.
  *
- * @note    Call this method when an external event source triggers a programmatic refresh of your
- *          table. For example, if you use an NSTimer object to refresh the contents of the table
- *          view periodically, you would call this method as part of your timer handler. This method
- *          updates the state of the Udon Noodle control to reflect the in-progress refresh
- *          operation. When the refresh operation ends, be sure to call the endRefreshing method to
- *          return the control to its default state.
- *
+ * @note Call this method when an external event source triggers a programmatic refresh of your 
+ * table. For example, if you use an NSTimer object to refresh the contents of the table view 
+ * periodically, you would call this method as part of your timer handler. This method updates the 
+ * state of the Udon Noodle control to reflect the in-progress refresh operation. When the refresh 
+ * operation ends, be sure to call the endRefreshing method to return the control to its default 
+ * state.
  *
  * @since 2.3.0
  */
@@ -170,10 +221,9 @@ typedef NS_ENUM(NSUInteger, AFAdSDKUNControlStyle) {
 /*!
  * Tells the control that a refresh operation has ended.
  *
- * @note    Call this method at the end of any refresh operation (whether it was initiated
- *          programmatically or by the user) to return the Udon Noodle control to its default state.
- *          If the Udon Noodle control is at least partially visible, calling this method also hides
- *          it. If animations are also enabled, the control is hidden using an animation.
+ * @note Call this method at the end of any refresh operation (whether it was initiated 
+ * programmatically or by the user) to return the Udon Noodle control to its default state. If the 
+ * Udon Noodle control is at least partially visible, calling this method also hides it.
  *
  * @since 2.3.0
  */
@@ -182,7 +232,7 @@ typedef NS_ENUM(NSUInteger, AFAdSDKUNControlStyle) {
 /*!
  * Tells the control to programmatically dismiss when it's showing an ad.
  *
- * @note This method is only applied when the control's state is `AFAdSDKUNControlStateRefreshed`.
+ * @note This method is only applied when the control's state is AFAdSDKUNControlStateRefreshed.
  *
  * @since 2.3.0
  */
@@ -197,18 +247,33 @@ typedef NS_ENUM(NSUInteger, AFAdSDKUNControlStyle) {
 
 @optional
 
-/**
- *  Allows the customization of the `AFAdSDKSashimiMinimalView` instance displayed in the Udon Noodle
- *  control when available.
+/*!
+ * Allows the customization of the AFAdSDKSashimiMinimalView instance displayed in the Udon Noodle 
+ * control when available.
  *
- *  @param udonNoodleControl    The `AFAdSDKUdonNoodleControl` instance requesting for customization
- *                              of the `AFAdSDKSashimiMinimalView` instance displayed in the Udon
- *                              Noodle control.
+ * @param udonNoodleControl The AFAdSDKUdonNoodleControl instance requesting for customization of
+ * the AFAdSDKSashimiMinimalView instance displayed in  Udon Noodle control.
  *
- *  @param sashimiView          The the `AFAdSDKSashimiMinimalView` instance being customized.
- *  @since 2.3.0
+ * @param sashimiView The AFAdSDKSashimiMinimalView instance being customized.
+ *  
+ * @since 2.3.0
  */
 - (void)udonNoodleControl:(AFAdSDKUdonNoodleControl *)udonNoodleControl customizeSashimiView:(AFAdSDKSashimiMinimalView *)sashimiView;
+
+
+/*!
+ * This method should return the UIViewController used to host the StoreKit view controller. If not
+ * implemented, the StoreKit is not used and the user will be redirected to the App Store to
+ * download the app.
+ *
+ * @param udonNoodleControl The AFAdSDKUdonNoodleControl instance requesting for the host
+ * UIViewController to contain the StoreKit.
+ *
+ * @return a UIViewController that will host the StoreKit.
+ *
+ * @since 2.4.0
+ */
+- (UIViewController *)viewControllerForUdonNoodleControl:(AFAdSDKUdonNoodleControl *)udonNoodleControl;
 
 @end
 

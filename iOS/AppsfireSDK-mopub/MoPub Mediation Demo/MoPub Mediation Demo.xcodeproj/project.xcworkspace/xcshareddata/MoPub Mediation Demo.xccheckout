@@ -5,19 +5,19 @@
 	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
 	<false/>
 	<key>IDESourceControlProjectIdentifier</key>
-	<string>FAB72F2E-2017-49BF-A2B5-EECB60F05F83</string>
+	<string>F00C30A6-2EBB-4987-9A14-7E7C59A1F805</string>
 	<key>IDESourceControlProjectName</key>
 	<string>MoPub Mediation Demo</string>
 	<key>IDESourceControlProjectOriginsDictionary</key>
 	<dict>
-		<key>18F53F2B-47F7-4487-99C3-88F733FA8A90</key>
+		<key>9DABBFA1-19F9-4B52-8A5B-2574EFCEEF47</key>
 		<string>https://github.com/appsfire/Appsfire-mediation.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
 	<string>iOS/AppsfireSDK-mopub/MoPub Mediation Demo/MoPub Mediation Demo.xcodeproj/project.xcworkspace</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
-		<key>18F53F2B-47F7-4487-99C3-88F733FA8A90</key>
+		<key>9DABBFA1-19F9-4B52-8A5B-2574EFCEEF47</key>
 		<string>../../../../..</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
@@ -25,14 +25,14 @@
 	<key>IDESourceControlProjectVersion</key>
 	<integer>110</integer>
 	<key>IDESourceControlProjectWCCIdentifier</key>
-	<string>18F53F2B-47F7-4487-99C3-88F733FA8A90</string>
+	<string>9DABBFA1-19F9-4B52-8A5B-2574EFCEEF47</string>
 	<key>IDESourceControlProjectWCConfigurations</key>
 	<array>
 		<dict>
 			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
 			<string>public.vcs.git</string>
 			<key>IDESourceControlWCCIdentifierKey</key>
-			<string>18F53F2B-47F7-4487-99C3-88F733FA8A90</string>
+			<string>9DABBFA1-19F9-4B52-8A5B-2574EFCEEF47</string>
 			<key>IDESourceControlWCCName</key>
 			<string>Appsfire-mediation</string>
 		</dict>

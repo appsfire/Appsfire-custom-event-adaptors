@@ -1,11 +1,12 @@
-Appsfire for iOS
-================
+Mediation Adapters for the Appsfire SDK
+=======================================
 
-## Mediation Adaptors
+## Mediation Adapters
 
 Here you can find:
 
-- [iOS Mediation Adaptors](/iOS)
+- [iOS Mediation Adapters](/iOS)
+- [Android Mediation Adapters](/Android)
 
 Please refer to the README files.
 

@@ -1,10 +1,11 @@
 /*!
  *  @header    AFAdSDKSashimiMinimalView.h
  *  @abstract  Appsfire Advertising SDK Sashimi Minimal View Header
- *  @version   2.3.1
+ *  @version   2.4.0
  */
 
 #import "AFAdSDKSashimiView.h"
+#import <UIKit/UILabel.h>
 
 /*!
  * Enum to specify the style mode of the Sashimi view.

@@ -8,11 +8,9 @@
 #import "MPAdConfiguration.h"
 
 #import "MPConstants.h"
-#import "MPGlobal.h"
 #import "MPLogging.h"
 #import "math.h"
-
-#import "CJSONDeserializer.h"
+#import "NSJSONSerialization+MPAdditions.h"
 
 NSString * const kAdTypeHeaderKey = @"X-Adtype";
 NSString * const kClickthroughHeaderKey = @"X-Clickthrough";
@@ -40,6 +38,7 @@ NSString * const kAdTypeHtml = @"html";
 NSString * const kAdTypeInterstitial = @"interstitial";
 NSString * const kAdTypeMraid = @"mraid";
 NSString * const kAdTypeClear = @"clear";
+NSString * const kAdTypeNative = @"json";
 
 @interface MPAdConfiguration ()
 
@@ -246,8 +245,11 @@ NSString * const kAdTypeClear = @"clear";
 - (NSDictionary *)dictionaryFromHeaders:(NSDictionary *)headers forKey:(NSString *)key
 {
     NSData *data = [(NSString *)[headers objectForKey:key] dataUsingEncoding:NSUTF8StringEncoding];
-    CJSONDeserializer *deserializer = [CJSONDeserializer deserializerWithNullObject:NULL];
-    return [deserializer deserializeAsDictionary:data error:NULL];
+    NSDictionary *JSONFromHeaders = nil;
+    if (data) {
+        JSONFromHeaders = [NSJSONSerialization mp_JSONObjectWithData:data options:NSJSONReadingMutableContainers clearNullObjects:YES error:nil];
+    }
+    return JSONFromHeaders;
 }
 
 - (NSTimeInterval)refreshIntervalFromHeaders:(NSDictionary *)headers

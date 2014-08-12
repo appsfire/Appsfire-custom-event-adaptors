@@ -28,7 +28,7 @@
 - (void)loadView {
     [super loadView];
     
-    // Configuring the view
+    // Configuring the view.
     self.view.backgroundColor = [UIColor whiteColor];
     
     // Button
@@ -44,14 +44,14 @@
                                     UIViewAutoresizingFlexibleBottomMargin);
     [self.view addSubview:self.button];
     
-    // We disable the button until we have an ad
+    // We disable the button until we have an ad.
     self.button.enabled = NO;
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    // Load AdMob Interstitial
+    // Load AdMob Interstitial.
     [self loadInterstitial];
 }
 
@@ -61,11 +61,14 @@
     // Instantiate the interstitial using the class convenience method.
     self.interstitial = [[GADInterstitial alloc] init];
     
-#error Add your AdMob interstitial Unit Id
-    self.interstitial.adUnitID = @"YOUR_INTERSTITIAL_UNIT_ID";
+#error Add your AdMob interstitial Ad Unit Id.
+    self.interstitial.adUnitID = @"<ADMOB_AD_UNIT_ID>";
+    
+    // Creating the request.
+    GADRequest *request = [GADRequest request];
     
     // Loads an interstitial ad.
-    [self.interstitial loadRequest:[GADRequest request]];
+    [self.interstitial loadRequest:request];
     
     // Delegate
     self.interstitial.delegate = self;
@@ -80,7 +83,7 @@
 - (void)interstitialDidReceiveAd:(GADInterstitial *)ad {
     NSLog(@"%s", __PRETTY_FUNCTION__);
     
-    // Enabling the button if the interstitial is ready
+    // Enabling the button if the interstitial is ready.
     if (self.interstitial.isReady) {
         self.button.enabled = YES;
     }
