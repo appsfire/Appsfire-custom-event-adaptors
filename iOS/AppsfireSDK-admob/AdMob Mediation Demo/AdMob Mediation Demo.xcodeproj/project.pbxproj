@@ -9,8 +9,8 @@
 /* Begin PBXBuildFile section */
 		7B1645921861E83D007C2A07 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B1645911861E83D007C2A07 /* Accelerate.framework */; };
 		7B6046A61995131800EBA7DF /* AFAdMobCustomEventInterstitial.m in Sources */ = {isa = PBXBuildFile; fileRef = 7B6046A51995131800EBA7DF /* AFAdMobCustomEventInterstitial.m */; };
-		7B6047FD1998C16700EBA7DF /* libAppsfireSDK.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B6047F91998C16700EBA7DF /* libAppsfireSDK.a */; };
-		7B6047FE1998C16700EBA7DF /* AppsfireAdTimerView.m in Sources */ = {isa = PBXBuildFile; fileRef = 7B6047FC1998C16700EBA7DF /* AppsfireAdTimerView.m */; };
+		7B60482E1998C76900EBA7DF /* libAppsfireSDK.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B6048241998C76900EBA7DF /* libAppsfireSDK.a */; };
+		7B60482F1998C76900EBA7DF /* AppsfireAdTimerView.m in Sources */ = {isa = PBXBuildFile; fileRef = 7B60482D1998C76900EBA7DF /* AppsfireAdTimerView.m */; };
 		7B6BC660181E91620011CD27 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B6BC65F181E91620011CD27 /* Foundation.framework */; };
 		7B6BC662181E91620011CD27 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B6BC661181E91620011CD27 /* CoreGraphics.framework */; };
 		7B6BC664181E91620011CD27 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B6BC663181E91620011CD27 /* UIKit.framework */; };
@@ -45,20 +45,20 @@
 		7B6046B0199514A100EBA7DF /* GADModules.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GADModules.h; sourceTree = "<group>"; };
 		7B6046B1199514A100EBA7DF /* GADRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GADRequest.h; sourceTree = "<group>"; };
 		7B6046B2199514A100EBA7DF /* GADRequestError.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GADRequestError.h; sourceTree = "<group>"; };
-		7B6047F51998C16700EBA7DF /* AppsfireAdSDK.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppsfireAdSDK.h; sourceTree = "<group>"; };
-		7B6047F61998C16700EBA7DF /* AppsfireEngageSDK.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppsfireEngageSDK.h; sourceTree = "<group>"; };
-		7B6047F71998C16700EBA7DF /* AppsfireSDK.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppsfireSDK.h; sourceTree = "<group>"; };
-		7B6047F81998C16700EBA7DF /* AppsfireSDKConstants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppsfireSDKConstants.h; sourceTree = "<group>"; };
-		7B6047F91998C16700EBA7DF /* libAppsfireSDK.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libAppsfireSDK.a; sourceTree = "<group>"; };
-		7B6047FB1998C16700EBA7DF /* AppsfireAdTimerView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppsfireAdTimerView.h; sourceTree = "<group>"; };
-		7B6047FC1998C16700EBA7DF /* AppsfireAdTimerView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AppsfireAdTimerView.m; sourceTree = "<group>"; };
-		7B6048001998C2E000EBA7DF /* AFAdSDKIAP.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFAdSDKIAP.h; sourceTree = "<group>"; };
-		7B6048011998C2E000EBA7DF /* AFAdSDKIAPProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFAdSDKIAPProperty.h; sourceTree = "<group>"; };
-		7B6048031998C2E000EBA7DF /* AFAdSDKAdBadgeView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFAdSDKAdBadgeView.h; sourceTree = "<group>"; };
-		7B6048041998C2E000EBA7DF /* AFAdSDKSashimiExtendedView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFAdSDKSashimiExtendedView.h; sourceTree = "<group>"; };
-		7B6048051998C2E000EBA7DF /* AFAdSDKSashimiMinimalView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFAdSDKSashimiMinimalView.h; sourceTree = "<group>"; };
-		7B6048061998C2E000EBA7DF /* AFAdSDKSashimiView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFAdSDKSashimiView.h; sourceTree = "<group>"; };
-		7B6048071998C2E000EBA7DF /* AFAdSDKUdonNoodleControl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFAdSDKUdonNoodleControl.h; sourceTree = "<group>"; };
+		7B60481D1998C76900EBA7DF /* AppsfireAdSDK.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppsfireAdSDK.h; sourceTree = "<group>"; };
+		7B60481E1998C76900EBA7DF /* AppsfireEngageSDK.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppsfireEngageSDK.h; sourceTree = "<group>"; };
+		7B60481F1998C76900EBA7DF /* AppsfireSDK.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppsfireSDK.h; sourceTree = "<group>"; };
+		7B6048201998C76900EBA7DF /* AppsfireSDKConstants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppsfireSDKConstants.h; sourceTree = "<group>"; };
+		7B6048221998C76900EBA7DF /* AFAdSDKIAP.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFAdSDKIAP.h; sourceTree = "<group>"; };
+		7B6048231998C76900EBA7DF /* AFAdSDKIAPProperty.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFAdSDKIAPProperty.h; sourceTree = "<group>"; };
+		7B6048241998C76900EBA7DF /* libAppsfireSDK.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libAppsfireSDK.a; sourceTree = "<group>"; };
+		7B6048261998C76900EBA7DF /* AFAdSDKAdBadgeView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFAdSDKAdBadgeView.h; sourceTree = "<group>"; };
+		7B6048271998C76900EBA7DF /* AFAdSDKSashimiExtendedView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFAdSDKSashimiExtendedView.h; sourceTree = "<group>"; };
+		7B6048281998C76900EBA7DF /* AFAdSDKSashimiMinimalView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFAdSDKSashimiMinimalView.h; sourceTree = "<group>"; };
+		7B6048291998C76900EBA7DF /* AFAdSDKSashimiView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFAdSDKSashimiView.h; sourceTree = "<group>"; };
+		7B60482A1998C76900EBA7DF /* AFAdSDKUdonNoodleControl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFAdSDKUdonNoodleControl.h; sourceTree = "<group>"; };
+		7B60482C1998C76900EBA7DF /* AppsfireAdTimerView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppsfireAdTimerView.h; sourceTree = "<group>"; };
+		7B60482D1998C76900EBA7DF /* AppsfireAdTimerView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AppsfireAdTimerView.m; sourceTree = "<group>"; };
 		7B6BC65C181E91620011CD27 /* AdMob Mediation Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "AdMob Mediation Demo.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		7B6BC65F181E91620011CD27 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		7B6BC661181E91620011CD27 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -95,7 +95,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7B7A102D18A91A7200C672FA /* AVFoundation.framework in Frameworks */,
-				7B6047FD1998C16700EBA7DF /* libAppsfireSDK.a in Frameworks */,
+				7B60482E1998C76900EBA7DF /* libAppsfireSDK.a in Frameworks */,
 				7B6BC787181E97E10011CD27 /* AdSupport.framework in Frameworks */,
 				7B7A102B18A91A5800C672FA /* CoreTelephony.framework in Frameworks */,
 				7B1645921861E83D007C2A07 /* Accelerate.framework in Frameworks */,
@@ -123,50 +123,50 @@
 			path = ../../../AFAdMobCustomEventInterstitial;
 			sourceTree = "<group>";
 		};
-		7B6047F41998C16700EBA7DF /* appsfire-sdk */ = {
+		7B60481C1998C76900EBA7DF /* appsfire-sdk */ = {
 			isa = PBXGroup;
 			children = (
-				7B6047F91998C16700EBA7DF /* libAppsfireSDK.a */,
-				7B6047F51998C16700EBA7DF /* AppsfireAdSDK.h */,
-				7B6047F61998C16700EBA7DF /* AppsfireEngageSDK.h */,
-				7B6047F71998C16700EBA7DF /* AppsfireSDK.h */,
-				7B6047F81998C16700EBA7DF /* AppsfireSDKConstants.h */,
-				7B6047FF1998C2E000EBA7DF /* iap */,
-				7B6048021998C2E000EBA7DF /* sashimi */,
+				7B6048241998C76900EBA7DF /* libAppsfireSDK.a */,
+				7B60481D1998C76900EBA7DF /* AppsfireAdSDK.h */,
+				7B60481E1998C76900EBA7DF /* AppsfireEngageSDK.h */,
+				7B60481F1998C76900EBA7DF /* AppsfireSDK.h */,
+				7B6048201998C76900EBA7DF /* AppsfireSDKConstants.h */,
+				7B6048211998C76900EBA7DF /* iap */,
+				7B6048251998C76900EBA7DF /* sashimi */,
 			);
 			name = "appsfire-sdk";
 			path = "../../../appsfire-sdk";
 			sourceTree = "<group>";
 		};
-		7B6047FA1998C16700EBA7DF /* AppsfireAdTimerView */ = {
+		7B6048211998C76900EBA7DF /* iap */ = {
 			isa = PBXGroup;
 			children = (
-				7B6047FB1998C16700EBA7DF /* AppsfireAdTimerView.h */,
-				7B6047FC1998C16700EBA7DF /* AppsfireAdTimerView.m */,
-			);
-			name = AppsfireAdTimerView;
-			path = ../../../AppsfireAdTimerView;
-			sourceTree = "<group>";
-		};
-		7B6047FF1998C2E000EBA7DF /* iap */ = {
-			isa = PBXGroup;
-			children = (
-				7B6048001998C2E000EBA7DF /* AFAdSDKIAP.h */,
-				7B6048011998C2E000EBA7DF /* AFAdSDKIAPProperty.h */,
+				7B6048221998C76900EBA7DF /* AFAdSDKIAP.h */,
+				7B6048231998C76900EBA7DF /* AFAdSDKIAPProperty.h */,
 			);
 			path = iap;
 			sourceTree = "<group>";
 		};
-		7B6048021998C2E000EBA7DF /* sashimi */ = {
+		7B6048251998C76900EBA7DF /* sashimi */ = {
 			isa = PBXGroup;
 			children = (
-				7B6048031998C2E000EBA7DF /* AFAdSDKAdBadgeView.h */,
-				7B6048041998C2E000EBA7DF /* AFAdSDKSashimiExtendedView.h */,
-				7B6048051998C2E000EBA7DF /* AFAdSDKSashimiMinimalView.h */,
-				7B6048061998C2E000EBA7DF /* AFAdSDKSashimiView.h */,
-				7B6048071998C2E000EBA7DF /* AFAdSDKUdonNoodleControl.h */,
+				7B6048261998C76900EBA7DF /* AFAdSDKAdBadgeView.h */,
+				7B6048271998C76900EBA7DF /* AFAdSDKSashimiExtendedView.h */,
+				7B6048281998C76900EBA7DF /* AFAdSDKSashimiMinimalView.h */,
+				7B6048291998C76900EBA7DF /* AFAdSDKSashimiView.h */,
+				7B60482A1998C76900EBA7DF /* AFAdSDKUdonNoodleControl.h */,
 			);
 			path = sashimi;
+			sourceTree = "<group>";
+		};
+		7B60482B1998C76900EBA7DF /* AppsfireAdTimerView */ = {
+			isa = PBXGroup;
+			children = (
+				7B60482C1998C76900EBA7DF /* AppsfireAdTimerView.h */,
+				7B60482D1998C76900EBA7DF /* AppsfireAdTimerView.m */,
+			);
+			name = AppsfireAdTimerView;
+			path = ../../../AppsfireAdTimerView;
 			sourceTree = "<group>";
 		};
 		7B6BC653181E91620011CD27 = {
@@ -235,8 +235,8 @@
 			children = (
 				7B78306F181E9A8100107053 /* AdMob */,
 				7B6046A31995131800EBA7DF /* AFAdMobCustomEventInterstitial */,
-				7B6047F41998C16700EBA7DF /* appsfire-sdk */,
-				7B6047FA1998C16700EBA7DF /* AppsfireAdTimerView */,
+				7B60481C1998C76900EBA7DF /* appsfire-sdk */,
+				7B60482B1998C76900EBA7DF /* AppsfireAdTimerView */,
 			);
 			path = Vendor;
 			sourceTree = "<group>";
@@ -349,7 +349,7 @@
 			files = (
 				7B6BC66C181E91620011CD27 /* main.m in Sources */,
 				7B783165181E9E5000107053 /* AFViewController.m in Sources */,
-				7B6047FE1998C16700EBA7DF /* AppsfireAdTimerView.m in Sources */,
+				7B60482F1998C76900EBA7DF /* AppsfireAdTimerView.m in Sources */,
 				7B6BC670181E91620011CD27 /* AFAppDelegate.m in Sources */,
 				7B6046A61995131800EBA7DF /* AFAdMobCustomEventInterstitial.m in Sources */,
 			);
@@ -452,8 +452,8 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 5.1.1;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(SRCROOT)/AdMob\\ Mediation\\ Demo/Vendor/AdMob/",
 					"$(SRCROOT)/../appsfire-sdk",
+					"$(SRCROOT)/AdMob\\ Mediation\\ Demo/Vendor/AdMob/",
 				);
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -473,8 +473,8 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 5.1.1;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(SRCROOT)/AdMob\\ Mediation\\ Demo/Vendor/AdMob/",
 					"$(SRCROOT)/../appsfire-sdk",
+					"$(SRCROOT)/AdMob\\ Mediation\\ Demo/Vendor/AdMob/",
 				);
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";

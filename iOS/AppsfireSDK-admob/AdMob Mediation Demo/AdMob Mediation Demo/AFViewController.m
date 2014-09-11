@@ -62,7 +62,7 @@
     self.interstitial = [[GADInterstitial alloc] init];
     
 #error Add your AdMob interstitial Ad Unit Id.
-    self.interstitial.adUnitID = @"<ADMOB_AD_UNIT_ID>";
+    self.interstitial.adUnitID = @"";
     
     // Creating the request.
     GADRequest *request = [GADRequest request];
