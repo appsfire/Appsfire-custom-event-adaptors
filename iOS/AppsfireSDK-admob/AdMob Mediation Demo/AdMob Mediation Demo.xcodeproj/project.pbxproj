@@ -87,6 +87,13 @@
 		7B783164181E9E5000107053 /* AFViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AFViewController.m; sourceTree = "<group>"; };
 		7B7A102A18A91A5800C672FA /* CoreTelephony.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreTelephony.framework; path = System/Library/Frameworks/CoreTelephony.framework; sourceTree = SDKROOT; };
 		7B7A102C18A91A7200C672FA /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		7BB604BA19E576FA0025B3FD /* AFMedBannerView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFMedBannerView.h; sourceTree = "<group>"; };
+		7BB604BB19E576FA0025B3FD /* AFMedBannerViewCustomEvent.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFMedBannerViewCustomEvent.h; sourceTree = "<group>"; };
+		7BB604BC19E576FA0025B3FD /* AFMedBannerViewCustomEventDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFMedBannerViewCustomEventDelegate.h; sourceTree = "<group>"; };
+		7BB604BD19E576FA0025B3FD /* AFMedInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFMedInfo.h; sourceTree = "<group>"; };
+		7BB604BE19E576FA0025B3FD /* AFMedInterstitial.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFMedInterstitial.h; sourceTree = "<group>"; };
+		7BB604BF19E576FA0025B3FD /* AFMedInterstitialCustomEvent.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFMedInterstitialCustomEvent.h; sourceTree = "<group>"; };
+		7BB604C019E576FA0025B3FD /* AFMedInterstitialCustomEventDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFMedInterstitialCustomEventDelegate.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -132,6 +139,7 @@
 				7B60481F1998C76900EBA7DF /* AppsfireSDK.h */,
 				7B6048201998C76900EBA7DF /* AppsfireSDKConstants.h */,
 				7B6048211998C76900EBA7DF /* iap */,
+				7BB604B919E576FA0025B3FD /* mediation */,
 				7B6048251998C76900EBA7DF /* sashimi */,
 			);
 			name = "appsfire-sdk";
@@ -281,6 +289,20 @@
 				7B7830F8181E9A8100107053 /* GADCustomEventRequest.h */,
 			);
 			path = Mediation;
+			sourceTree = "<group>";
+		};
+		7BB604B919E576FA0025B3FD /* mediation */ = {
+			isa = PBXGroup;
+			children = (
+				7BB604BA19E576FA0025B3FD /* AFMedBannerView.h */,
+				7BB604BB19E576FA0025B3FD /* AFMedBannerViewCustomEvent.h */,
+				7BB604BC19E576FA0025B3FD /* AFMedBannerViewCustomEventDelegate.h */,
+				7BB604BD19E576FA0025B3FD /* AFMedInfo.h */,
+				7BB604BE19E576FA0025B3FD /* AFMedInterstitial.h */,
+				7BB604BF19E576FA0025B3FD /* AFMedInterstitialCustomEvent.h */,
+				7BB604C019E576FA0025B3FD /* AFMedInterstitialCustomEventDelegate.h */,
+			);
+			path = mediation;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

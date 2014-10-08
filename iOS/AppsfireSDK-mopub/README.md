@@ -14,7 +14,7 @@ It also helps you engage with your users by sending push and in-app notification
 - Check out the full [API specification](http://docs.appsfire.com/sdk/ios/api-reference/) to have a detailed understanding of our SDK.
 
 ## Requirements
-In order to use the latest version of the MoPub adapter you will need the version [**v2.4.0**](https://github.com/appsfire/Appsfire-iOS-SDK/releases/tag/2.4.0) of the Appsfire SDK.
+In order to use the latest version of the MoPub adapter you will need the version [**2.5.0**](https://github.com/appsfire/Appsfire-iOS-SDK/releases/tag/2.5.0) of the Appsfire SDK.
 
 ## Installation
 In order to get started, please be sure you've done the following:

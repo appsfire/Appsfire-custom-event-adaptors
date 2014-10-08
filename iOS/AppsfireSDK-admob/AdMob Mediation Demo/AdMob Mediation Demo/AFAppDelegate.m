@@ -19,11 +19,8 @@
      * Appsfire SDK.
      */
     
-#error Add your Appsfire SDK Token.
-    NSString *sdkToken = @"";
-    
-    // The only mandatory code to use the Appsfire SDK is the connection to the API with your SDK Token.
-    NSError *error = [AppsfireSDK connectWithSDKToken:sdkToken features:AFSDKFeatureMonetization parameters:nil];
+    #error Add your Appsfire SDK Token and Secret Key below.
+    NSError *error = [AppsfireSDK connectWithSDKToken:@"<APPSFIRE_SDK_TOKEN>" secretKey:@"<APPSFIRE_SECRET_KEY>" features:AFSDKFeatureMonetization parameters:nil];
     if (error) {
         NSLog(@"Error while initializing the Appsfire SDK: %@", error.description);
     }

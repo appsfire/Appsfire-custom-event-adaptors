@@ -5,36 +5,55 @@
 	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
 	<false/>
 	<key>IDESourceControlProjectIdentifier</key>
-	<string>F00C30A6-2EBB-4987-9A14-7E7C59A1F805</string>
+	<string>40F1CAB7-8A99-49B3-84CF-132E360F6A47</string>
 	<key>IDESourceControlProjectName</key>
 	<string>MoPub Mediation Demo</string>
 	<key>IDESourceControlProjectOriginsDictionary</key>
 	<dict>
-		<key>9DABBFA1-19F9-4B52-8A5B-2574EFCEEF47</key>
-		<string>https://github.com/appsfire/Appsfire-mediation.git</string>
+		<key>7ede4ecc-9d39-4dee-8a2f-6f7a0710c734++4453</key>
+		<string>https://appsfire.unfuddle.com/svn/appsfire_afappboostersdk/SDK</string>
+		<key>BBED511B-EFB4-4D20-9AE0-D973204C9A1C</key>
+		<string>https://appsfire.unfuddle.com/svn/appsfire_afappboostersdk/SDK</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
-	<string>iOS/AppsfireSDK-mopub/MoPub Mediation Demo/MoPub Mediation Demo.xcodeproj/project.xcworkspace</string>
+	<string>ad-mediation/mopub/MoPub Mediation Demo/MoPub Mediation Demo.xcodeproj</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
-		<key>9DABBFA1-19F9-4B52-8A5B-2574EFCEEF47</key>
+		<key>7ede4ecc-9d39-4dee-8a2f-6f7a0710c734++4453</key>
 		<string>../../../../..</string>
+		<key>BBED511B-EFB4-4D20-9AE0-D973204C9A1C</key>
+		<string>../../../../../../AdMob Mediation Demo</string>
+	</dict>
+	<key>IDESourceControlProjectRepositoryRootDictionary</key>
+	<dict>
+		<key>7ede4ecc-9d39-4dee-8a2f-6f7a0710c734++4453</key>
+		<string>https://appsfire.unfuddle.com/svn/appsfire_afappboostersdk</string>
+		<key>BBED511B-EFB4-4D20-9AE0-D973204C9A1C</key>
+		<string>https://appsfire.unfuddle.com/svn/appsfire_afappboostersdk</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
-	<string>https://github.com/appsfire/Appsfire-mediation.git</string>
+	<string>https://appsfire.unfuddle.com/svn/appsfire_afappboostersdk/SDK/ad-mediation/mopub/MoPub%20Mediation%20Demo/MoPub%20Mediation%20Demo.xcodeproj</string>
 	<key>IDESourceControlProjectVersion</key>
-	<integer>110</integer>
+	<integer>111</integer>
 	<key>IDESourceControlProjectWCCIdentifier</key>
-	<string>9DABBFA1-19F9-4B52-8A5B-2574EFCEEF47</string>
+	<string>7ede4ecc-9d39-4dee-8a2f-6f7a0710c734++4453</string>
 	<key>IDESourceControlProjectWCConfigurations</key>
 	<array>
 		<dict>
 			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
-			<string>public.vcs.git</string>
+			<string>public.vcs.subversion</string>
 			<key>IDESourceControlWCCIdentifierKey</key>
-			<string>9DABBFA1-19F9-4B52-8A5B-2574EFCEEF47</string>
+			<string>BBED511B-EFB4-4D20-9AE0-D973204C9A1C</string>
 			<key>IDESourceControlWCCName</key>
-			<string>Appsfire-mediation</string>
+			<string>AdMob Mediation Demo</string>
+		</dict>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.subversion</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>7ede4ecc-9d39-4dee-8a2f-6f7a0710c734++4453</string>
+			<key>IDESourceControlWCCName</key>
+			<string>SDK%20-%20iOS</string>
 		</dict>
 	</array>
 </dict>
