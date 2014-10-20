@@ -2,12 +2,13 @@ Android Mediation Adaptors for Appsfire (Android)
 =================================================
 
 ## Mediation Adaptors
-Here you can find:
+Appsfire ads can be mediated by others SDK sush as MoPub and Admob.
+Here you will find:
 
 - [Appsfire MoPub Android Mediation Adaptor](AppsfireAndroidSDK-mopub)
 - [Appsfire AdMob Android Mediation Adaptor](AppsfireAndroidSDK-admob)
 
-Please refer to the README files.
+If you want to use our SDK to mediate other ad networks (instead of our SDK being mediated by MoPub or Admob), please visit our [Android documentation](http://docs.appsfire.com/sdk/android/integration-reference/Monetization_Features/Mediation/Introduction).
 
 ## Getting Started with Appsfire
 The Appsfire Android SDK is the cornerstone of the Appsfire network.

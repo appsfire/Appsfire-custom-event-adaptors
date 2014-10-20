@@ -3,12 +3,13 @@ Mediation Adapters for the Appsfire SDK
 
 ## Mediation Adapters
 
-Here you can find:
+Appsfire ads can be mediated by others SDK sush as MoPub and Admob.
+Here you will find:
 
-- [iOS Mediation Adapters](/iOS)
-- [Android Mediation Adapters](/Android)
+- [iOS mediation Adapters](/iOS)
+- [Android mediation Adapters](/Android)
 
-Please refer to the README files.
+If you want to use our SDK to mediate other ad networks (instead of our SDK being mediated by MoPub or Admob), please visit our documentation ([iOS](http://docs.appsfire.com/sdk/ios/integration-reference/Monetization_Features/Mediation/Introduction) / [Android](http://docs.appsfire.com/sdk/android/integration-reference/Monetization_Features/Mediation/Introduction)).
 
 ## Getting Started with Appsfire
 The Appsfire SDK is the cornerstone of the Appsfire network.
@@ -26,4 +27,4 @@ In order to get started, please be sure you've done the following:
 
 1. Registered on [Appsfire website](http://www.appsfire.com/) and accepted our Terms Of Use
 2. Registered your app on our [Dashboard](http://dashboard.appsfire.com/) and generated an SDK key for your app
-3. Grabbed our latest version of the SDK downloading it from our [Dashboard](http://dashboard.appsfire.com/app/doc) or from Github
+3. Grabbed our latest version of the SDK downloading it from our [Dashboard](http://dashboard.appsfire.com/doc/ios)
