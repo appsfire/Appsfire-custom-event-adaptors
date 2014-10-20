@@ -4,8 +4,8 @@ Android Mediation Adaptors for Appsfire (Android)
 ## Mediation Adaptors
 Here you can find:
 
-- [Appsfire MoPub Android Mediation Adaptor](https://github.com/appsfire/Appsfire-mediation/tree/master/Android/AppsfireAndroidSDK-mopub)
-- [Appsfire AdMob Android Mediation Adaptor](https://github.com/appsfire/Appsfire-mediation/tree/master/Android/AppsfireAndroidSDK-admob)
+- [Appsfire MoPub Android Mediation Adaptor](/AppsfireAndroidSDK-mopub)
+- [Appsfire AdMob Android Mediation Adaptor](/AppsfireAndroidSDK-admob)
 
 Please refer to the README files.
 

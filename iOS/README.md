@@ -4,8 +4,8 @@ iOS Mediation Adaptors for Appsfire (iOS)
 ## Mediation Adaptors
 Here you can find:
 
-- [Appsfire MoPub iOS Mediation Adaptor](https://github.com/appsfire/Appsfire-mediation/tree/master/iOS/AppsfireSDK-mopub)
-- [Appsfire AdMob iOS Mediation Adaptor](https://github.com/appsfire/Appsfire-mediation/tree/master/iOS/AppsfireSDK-admob)
+- [Appsfire MoPub iOS Mediation Adaptor](/AppsfireSDK-mopub)
+- [Appsfire AdMob iOS Mediation Adaptor](/AppsfireSDK-admob)
 
 Please refer to the README files.
 
