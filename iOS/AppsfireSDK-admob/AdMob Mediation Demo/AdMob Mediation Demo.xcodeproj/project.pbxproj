@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		7B1645921861E83D007C2A07 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B1645911861E83D007C2A07 /* Accelerate.framework */; };
+		7B4621FD1A2CC6EF0060F339 /* CoreText.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B4621FC1A2CC6EF0060F339 /* CoreText.framework */; };
 		7B6046A61995131800EBA7DF /* AFAdMobCustomEventInterstitial.m in Sources */ = {isa = PBXBuildFile; fileRef = 7B6046A51995131800EBA7DF /* AFAdMobCustomEventInterstitial.m */; };
 		7B60482E1998C76900EBA7DF /* libAppsfireSDK.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B6048241998C76900EBA7DF /* libAppsfireSDK.a */; };
 		7B60482F1998C76900EBA7DF /* AppsfireAdTimerView.m in Sources */ = {isa = PBXBuildFile; fileRef = 7B60482D1998C76900EBA7DF /* AppsfireAdTimerView.m */; };
@@ -31,6 +32,7 @@
 
 /* Begin PBXFileReference section */
 		7B1645911861E83D007C2A07 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
+		7B4621FC1A2CC6EF0060F339 /* CoreText.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreText.framework; path = System/Library/Frameworks/CoreText.framework; sourceTree = SDKROOT; };
 		7B6046A41995131800EBA7DF /* AFAdMobCustomEventInterstitial.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFAdMobCustomEventInterstitial.h; sourceTree = "<group>"; };
 		7B6046A51995131800EBA7DF /* AFAdMobCustomEventInterstitial.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AFAdMobCustomEventInterstitial.m; sourceTree = "<group>"; };
 		7B6046A7199514A100EBA7DF /* GADAdMobExtras.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GADAdMobExtras.h; sourceTree = "<group>"; };
@@ -101,6 +103,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7B4621FD1A2CC6EF0060F339 /* CoreText.framework in Frameworks */,
 				7B7A102D18A91A7200C672FA /* AVFoundation.framework in Frameworks */,
 				7B60482E1998C76900EBA7DF /* libAppsfireSDK.a in Frameworks */,
 				7B6BC787181E97E10011CD27 /* AdSupport.framework in Frameworks */,
@@ -197,6 +200,7 @@
 		7B6BC65E181E91620011CD27 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				7B4621FC1A2CC6EF0060F339 /* CoreText.framework */,
 				7B7A102C18A91A7200C672FA /* AVFoundation.framework */,
 				7B7A102A18A91A5800C672FA /* CoreTelephony.framework */,
 				7B1645911861E83D007C2A07 /* Accelerate.framework */,

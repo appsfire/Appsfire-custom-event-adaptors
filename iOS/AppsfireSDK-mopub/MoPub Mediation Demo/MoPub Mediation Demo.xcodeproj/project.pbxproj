@@ -104,6 +104,7 @@
 		7B21BBBC19E57DB500252ADF /* MPCloseButtonX.png in Resources */ = {isa = PBXBuildFile; fileRef = 7B21BB5C19E57DB500252ADF /* MPCloseButtonX.png */; };
 		7B21BBBD19E57DB500252ADF /* MPCloseButtonX@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 7B21BB5D19E57DB500252ADF /* MPCloseButtonX@2x.png */; };
 		7B21BBBE19E57DB500252ADF /* MRAID.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 7B21BB5E19E57DB500252ADF /* MRAID.bundle */; };
+		7B4621FF1A2CC7030060F339 /* CoreText.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B4621FE1A2CC7030060F339 /* CoreText.framework */; };
 		7B550AB0181A5E1900902C84 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B550AAF181A5E1900902C84 /* Foundation.framework */; };
 		7B550AB2181A5E1900902C84 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B550AB1181A5E1900902C84 /* CoreGraphics.framework */; };
 		7B550AB4181A5E1900902C84 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B550AB3181A5E1900902C84 /* UIKit.framework */; };
@@ -337,6 +338,7 @@
 		7B21BB5C19E57DB500252ADF /* MPCloseButtonX.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = MPCloseButtonX.png; sourceTree = "<group>"; };
 		7B21BB5D19E57DB500252ADF /* MPCloseButtonX@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "MPCloseButtonX@2x.png"; sourceTree = "<group>"; };
 		7B21BB5E19E57DB500252ADF /* MRAID.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = MRAID.bundle; sourceTree = "<group>"; };
+		7B4621FE1A2CC7030060F339 /* CoreText.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreText.framework; path = System/Library/Frameworks/CoreText.framework; sourceTree = SDKROOT; };
 		7B550AAC181A5E1900902C84 /* MoPub Mediation Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MoPub Mediation Demo.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		7B550AAF181A5E1900902C84 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		7B550AB1181A5E1900902C84 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -386,6 +388,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7B4621FF1A2CC7030060F339 /* CoreText.framework in Frameworks */,
 				7B16458218619ED5007C2A07 /* Accelerate.framework in Frameworks */,
 				7B550BED181A61C100902C84 /* SystemConfiguration.framework in Frameworks */,
 				7B550BEB181A61B700902C84 /* StoreKit.framework in Frameworks */,
@@ -729,6 +732,7 @@
 		7B550AAE181A5E1900902C84 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				7B4621FE1A2CC7030060F339 /* CoreText.framework */,
 				7B16458118619ED5007C2A07 /* Accelerate.framework */,
 				7B550BEC181A61C100902C84 /* SystemConfiguration.framework */,
 				7B550BEA181A61B700902C84 /* StoreKit.framework */,
