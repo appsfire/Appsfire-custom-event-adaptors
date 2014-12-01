@@ -2,12 +2,13 @@ iOS Mediation Adaptors for Appsfire (iOS)
 =========================================
 
 ## Mediation Adaptors
-Here you can find:
+Appsfire ads can be mediated by others SDK sush as MoPub and Admob.
+Here you will find:
 
-- [Appsfire MoPub iOS Mediation Adaptor](https://github.com/appsfire/Appsfire-mediation/tree/master/iOS/AppsfireSDK-mopub)
-- [Appsfire AdMob iOS Mediation Adaptor](https://github.com/appsfire/Appsfire-mediation/tree/master/iOS/AppsfireSDK-admob)
+- [Appsfire MoPub iOS Mediation Adaptor](AppsfireSDK-mopub)
+- [Appsfire AdMob iOS Mediation Adaptor](AppsfireSDK-admob)
 
-Please refer to the README files.
+If you want to use our SDK to mediate other ad networks (instead of our SDK being mediated by MoPub or Admob), please visit our [iOS documentation](http://docs.appsfire.com/sdk/ios/integration-reference/Monetization_Features/Mediation/Introduction).
 
 ## Getting Started with Appsfire
 The Appsfire iOS SDK is the cornerstone of the Appsfire network.
