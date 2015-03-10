@@ -2,35 +2,13 @@
 
 Appsfire's AdUnit integration with AdMob is quite easy. AdMob provides a simple way with custom events to plug their SDK with our AdUnit.
 
-## Getting Started with Appsfire
-The Appsfire iOS SDK is the cornerstone of the Appsfire network.
-
-It provides the functionalities for monetizing your mobile application: it facilitates inserting native mobile ads into you application using native APIs. You can choose one of our ad units (Sushi, Uramaki).
-
-It also helps you engage with your users by sending push and in-app notifications.
-
-- Please visit our [website](http://appsfire.com) to learn more about our ad units and products.<br />
-- Please visit our [online documentation](http://docs.appsfire.com/sdk/ios/integration-reference/Introduction) to learn how to integrate our SDK into your app.<br />
-- Check out the full [API specification](http://docs.appsfire.com/sdk/ios/api-reference/) to have a detailed understanding of our SDK.
-
-## Requirements
-In order to use the latest version of the AdMob adapter you will need the version [**2.5.1**](https://github.com/appsfire/Appsfire-iOS-SDK/releases/tag/2.5.1) of the Appsfire SDK.
-
-## Installation
-In order to get started, please be sure you've done the following:
-
-1. Registered on [Appsfire website](http://www.appsfire.com/) and accepted our Terms Of Use
-1. Registered your app on our [Dashboard](http://dashboard.appsfire.com/) and generated an SDK key for your app
-1. Grabbed our latest version of the SDK, either using CocoaPods, or downloading the SDK from our [Dashboard](http://dashboard.appsfire.com/app/doc)
-
 ##Quick Start
 1. First you need to [**install the Appsfire SDK**](http://docs.appsfire.com/sdk/ios/integration-reference/Setup_Your_Project). If you are not familiar with it, you can take a look at the AdMob Mediation Demo project bundled in this package.
 
-1. In your Xcode project, **import** the following files :
-  - `AFAdMobCustomEventInterstitial/AFAdMobCustomEventInterstitial.h`
-  - `AFAdMobCustomEventInterstitial/AFAdMobCustomEventInterstitial.m`
-  - `AppsfireAdTimerView/AppsfireAdTimerView.h`
-  - `AppsfireAdTimerView/AppsfireAdTimerView.m`
+1. In your Xcode project, **import** the following files:
+  - the appsfire sdk (folder `appsfire-sdk`)
+  - the timer class called `AppsfireAdTimerView` (folder `appsfire-sdk-timer`)
+  - the custom event class for admob called `AFAdMobCustomEventInterstitial` (folder `appsfire-custom-event-interstitial`)
 
   `AFAdMobCustomEventInterstitial` is a pre-configured class which will be automatically instantiated by the AdMob SDK. The procedure to integrate it is described in the [AdMob guide](https://developers.google.com/mobile-ads-sdk/docs/admob/mediation#ios-customevents).
 
@@ -53,6 +31,10 @@ In order to get started, please be sure you've done the following:
 **Note**: Please make sure to only allocate one interstitial at a time, otherwise you can end up having less events reported to AdMob.
 
 ##Release Notes
+
+**1.5**
+Updated the example project for Admob 7.0.
+Updated the adapter to support new version of the Appsfire SDK (2.6.0).
 
 **1.4**  
 Updated the adapter to support new version of the Appsfire SDK (2.4.0).

@@ -1,36 +1,14 @@
-# Appsfire AdUnit and MoPub Mediation
+#Appsfire AdUnit and MoPub Mediation
 
 Appsfire's AdUnit integration with MoPub is quite easy. MoPub provides a simple way with custom events to plug their SDK with our AdUnit.
 
-## Getting Started with Appsfire
-The Appsfire iOS SDK is the cornerstone of the Appsfire network.
-
-It provides the functionalities for monetizing your mobile application: it facilitates inserting native mobile ads into you application using native APIs. You can choose one of our ad units (Sushi, Uramaki).
-
-It also helps you engage with your users by sending push and in-app notifications.
-
-- Please visit our [website](http://appsfire.com) to learn more about our ad units and products.<br />
-- Please visit our [online documentation](http://docs.appsfire.com/sdk/ios/integration-reference/Introduction) to learn how to integrate our SDK into your app.<br />
-- Check out the full [API specification](http://docs.appsfire.com/sdk/ios/api-reference/) to have a detailed understanding of our SDK.
-
-## Requirements
-In order to use the latest version of the MoPub adapter you will need the version [**2.5.1**](https://github.com/appsfire/Appsfire-iOS-SDK/releases/tag/2.5.1) of the Appsfire SDK.
-
-## Installation
-In order to get started, please be sure you've done the following:
-
-1. Registered on [Appsfire website](http://www.appsfire.com/) and accepted our Terms Of Use
-2. Registered your app on our [Dashboard](http://dashboard.appsfire.com/) and generated an SDK key for your app
-3. Grabbed our latest version of the SDK, either using CocoaPods, or downloading the SDK from our [Dashboard](http://dashboard.appsfire.com/app/doc)
-
-## Quick Start
+##Quick Start
 1. First you need to [**install the Appsfire SDK**](http://docs.appsfire.com/sdk/ios/integration-reference/Setup_Your_Project). If you are not familiar with it, you can take a look at the MoPub Mediation Demo project bundled in this package.
 
 1. In your Xcode project, **import** the following files :
-  - `AFMoPubInterstitialCustomEvent/AFMoPubInterstitialCustomEvent.h`
-  - `AFMoPubInterstitialCustomEvent/AFMoPubInterstitialCustomEvent.m`
-  - `AppsfireAdTimerView/AppsfireAdTimerView.h`
-  - `AppsfireAdTimerView/AppsfireAdTimerView.m`
+  - the appsfire sdk (folder `appsfire-sdk`)
+  - the timer class called `AppsfireAdTimerView` (folder `appsfire-sdk-timer`)
+  - the custom event class for admob called `AFMoPubInterstitialCustomEvent` (folder `appsfire-custom-event-interstitial`)
 
   `AFMoPubInterstitialCustomEvent` is a pre-configured class which will be automatically instantiated by the MoPub SDK. The procedure to implement it is described in the [MoPub wiki](https://github.com/mopub/mopub-ios-sdk/wiki/Custom-Events#quick-start-for-interstitials).
 
@@ -50,9 +28,13 @@ In order to get started, please be sure you've done the following:
 
 **Note**: Please make sure to only allocate one interstitial at a time, otherwise you can end up having less events reported to MoPub.
 
-## Release Notes
+##Release Notes
 
-**1.5**  
+**1.6**
+Updated the example project for MoPub 3.4.
+Updated the adapter to support new version of the Appsfire SDK (2.6.0).
+
+**1.5**
 Updated the adapter to support new version of the Appsfire SDK (2.4.0).
 
 **1.4**  

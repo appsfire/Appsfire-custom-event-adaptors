@@ -26,6 +26,7 @@
 #pragma mark - UIViewController
 
 - (void)loadView {
+    
     [super loadView];
     
     // Configuring the view.
@@ -46,13 +47,16 @@
     
     // We disable the button until we have an ad.
     self.button.enabled = NO;
+    
 }
 
 - (void)viewDidLoad {
+    
     [super viewDidLoad];
     
     // Load MoPub Interstitial.
     [self loadInterstitial];
+    
 }
 
 #pragma mark - MoPub
@@ -61,47 +65,61 @@
     
     #error Add your MoPub Ad Unit Id below.
     // Instantiate the interstitial using the class convenience method.
-    self.interstitial = [MPInterstitialAdController interstitialAdControllerForAdUnitId:@"<MOPUB_AD_UNIT_ID>"];
+    self.interstitial = [MPInterstitialAdController interstitialAdControllerForAdUnitId:@""];
     
     // Fetch the interstitial ad.
     [self.interstitial loadAd];
     
     // Delegate
     self.interstitial.delegate = self;
+    
 }
 
 - (void)showAd:(id)sender {
+    
     [self.interstitial showFromViewController:self];
+    
 }
 
 #pragma mark - MPInterstitialAdControllerDelegate
 
 - (void)interstitialDidLoadAd:(MPInterstitialAdController *)interstitial {
+    
     NSLog(@"%s", __PRETTY_FUNCTION__);
     
     // Enabling the button if the interstitial is ready.
     if (self.interstitial.ready) {
         self.button.enabled = YES;
     }
+    
 }
 
 - (void)interstitialDidFailToLoadAd:(MPInterstitialAdController *)interstitial {
+    
     NSLog(@"%s", __PRETTY_FUNCTION__);
+    
 }
 
 - (void)interstitialWillAppear:(MPInterstitialAdController *)interstitial {
+    
     NSLog(@"%s", __PRETTY_FUNCTION__);
+    
 }
 
 - (void)interstitialDidAppear:(MPInterstitialAdController *)interstitial {
+    
     NSLog(@"%s", __PRETTY_FUNCTION__);
+    
 }
 
 - (void)interstitialWillDisappear:(MPInterstitialAdController *)interstitial {
+    
     NSLog(@"%s", __PRETTY_FUNCTION__);
+    
 }
 
 - (void)interstitialDidDisappear:(MPInterstitialAdController *)interstitial {
+    
     NSLog(@"%s", __PRETTY_FUNCTION__);
     
     // Re-loading a new ad.
@@ -109,6 +127,7 @@
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [self loadInterstitial];
     });
+    
 }
 
 @end

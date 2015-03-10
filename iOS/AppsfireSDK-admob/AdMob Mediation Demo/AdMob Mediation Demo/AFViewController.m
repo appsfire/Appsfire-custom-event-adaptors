@@ -9,12 +9,13 @@
 #import "AFViewController.h"
 #import "AppsfireAdSDK.h"
 #import "AppsfireSDK.h"
-#import "GADInterstitial.h"
+#import <GoogleMobileAds/GADInterstitial.h>
+#import <GoogleMobileAds/GADInterstitialDelegate.h>
 
 @interface AFViewController () <GADInterstitialDelegate>
 
-@property (nonatomic) UIButton *button;
-@property (nonatomic) GADInterstitial *interstitial;
+@property (nonatomic, strong) UIButton *button;
+@property (nonatomic, strong) GADInterstitial *interstitial;
 
 - (void)loadInterstitial;
 - (void)showAd:(id)sender;
@@ -26,6 +27,7 @@
 #pragma mark - UIViewController
 
 - (void)loadView {
+    
     [super loadView];
     
     // Configuring the view.
@@ -36,33 +38,39 @@
     [self.button setTitle:@"Show Ad" forState:UIControlStateNormal];
     [self.button addTarget:self action:@selector(showAd:) forControlEvents:UIControlEventTouchUpInside];
     [self.button sizeToFit];
-    
-    self.button.center = self.view.center;
-    self.button.autoresizingMask = (UIViewAutoresizingFlexibleLeftMargin|
-                                    UIViewAutoresizingFlexibleRightMargin|
-                                    UIViewAutoresizingFlexibleTopMargin|
-                                    UIViewAutoresizingFlexibleBottomMargin);
     [self.view addSubview:self.button];
     
     // We disable the button until we have an ad.
     self.button.enabled = NO;
+    
 }
 
 - (void)viewDidLoad {
+    
     [super viewDidLoad];
     
     // Load AdMob Interstitial.
     [self loadInterstitial];
+    
+}
+
+#pragma mark - Layout
+
+- (void)viewWillLayoutSubviews {
+    
+    self.button.center = self.view.center;
+  
 }
 
 #pragma mark - AdMob
 
 - (void)loadInterstitial {
+    
     // Instantiate the interstitial using the class convenience method.
     self.interstitial = [[GADInterstitial alloc] init];
     
     #error Add your AdMob interstitial Ad Unit Id.
-    self.interstitial.adUnitID = @"<ADMOB_ADUNIT_ID>";
+    self.interstitial.adUnitID = @"";
     
     // Creating the request.
     GADRequest *request = [GADRequest request];
@@ -72,36 +80,48 @@
     
     // Delegate
     self.interstitial.delegate = self;
+    
 }
 
 - (void)showAd:(id)sender {
+    
     [self.interstitial presentFromRootViewController:self];
+    
 }
 
 #pragma mark - GADInterstitialDelegate
 
 - (void)interstitialDidReceiveAd:(GADInterstitial *)ad {
+    
     NSLog(@"%s", __PRETTY_FUNCTION__);
     
     // Enabling the button if the interstitial is ready.
     if (self.interstitial.isReady) {
         self.button.enabled = YES;
     }
+    
 }
 
 - (void)interstitial:(GADInterstitial *)ad didFailToReceiveAdWithError:(GADRequestError *)error {
+    
     NSLog(@"%s", __PRETTY_FUNCTION__);
+    
 }
 
 - (void)interstitialWillPresentScreen:(GADInterstitial *)ad {
+    
     NSLog(@"%s", __PRETTY_FUNCTION__);
+    
 }
 
 - (void)interstitialWillDismissScreen:(GADInterstitial *)ad {
+    
     NSLog(@"%s", __PRETTY_FUNCTION__);
+    
 }
 
 - (void)interstitialDidDismissScreen:(GADInterstitial *)ad {
+    
     NSLog(@"%s", __PRETTY_FUNCTION__);
     
     // Re-loading a new ad.
@@ -109,10 +129,13 @@
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [self loadInterstitial];
     });
+    
 }
 
 - (void)interstitialWillLeaveApplication:(GADInterstitial *)ad {
+    
     NSLog(@"%s", __PRETTY_FUNCTION__);
+    
 }
 
 @end

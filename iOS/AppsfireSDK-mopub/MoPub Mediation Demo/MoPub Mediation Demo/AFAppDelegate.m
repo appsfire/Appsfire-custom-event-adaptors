@@ -20,15 +20,15 @@
      */
     
     #error Add your Appsfire SDK Token and Secret Key below.
-    NSError *error = [AppsfireSDK connectWithSDKToken:@"<APPSFIRE_SDK_TOKEN>" secretKey:@"<APPSFIRE_SECRET_KEY>" features:AFSDKFeatureMonetization parameters:nil];
+    NSError *error = [AppsfireSDK connectWithSDKToken:@"" secretKey:@"" features:AFSDKFeatureMonetization parameters:nil];
     if (error) {
         NSLog(@"Error while initializing the Appsfire SDK: %@", error.description);
     }
     
-#if DEBUG
-#warning Replace by `NO` if you don't want to see test Ads in DEBUG mode.
-    [AppsfireAdSDK setDebugModeEnabled:YES];
-#endif
+    #if DEBUG
+    #warning Replace by `NO` if you don't want to see test Ads in DEBUG mode.
+        [AppsfireAdSDK setDebugModeEnabled:YES];
+    #endif
     
     /*
      * UI Implementation.
@@ -40,6 +40,7 @@
     
     [self.window makeKeyAndVisible];
     return YES;
+    
 }
 
 @end
