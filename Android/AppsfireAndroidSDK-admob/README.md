@@ -22,7 +22,7 @@ In order to get started, please be sure you've done the following:
 3. Grabbed our latest version of the SDK, either using CocoaPods, or downloading the SDK from our [Dashboard](http://dashboard.appsfire.com/app/doc)
 
 ## Quick Start
-1. First you need to install the Appsfire SDK in order to use the Appsfire AdUnit. If you are not familiar with it, you can take a look at the MoPub Mediation Demo project bundled in this package.
+1. First you need to install the Appsfire SDK in order to use the Appsfire AdUnit. If you are not familiar with it, you can take a look at the AdMob Mediation Demo project bundled in this package.
 2. Add admob_adapter/trunk/src as external sources to your Eclipse project that makes use of Admob (for instance aliased as src_adapter)
 3. On the AdMob web interface, create a new network in the Monetize section. A popup will be presented to you where you can pick a network, instead click on Custom event and enter com.appsfire.mediation.AdmobInterstitialAdapter then put {"sdkKey": "INSERT_YOUR_API_KEY", "isDebug": "1"} in the Parameter section. To turn off debug mode when you release your app, use "0" instead of "1" for isDebug.
 
@@ -32,8 +32,13 @@ In order to get started, please be sure you've done the following:
 
 3. On the AdMob web interface, **create a new network** in the Monetize section. A popup will be presented to you where you can pick a network, instead click on *Custom event* and enter `com.appsfire.mediation.AdmobInterstitialAdapter` in the *Class name* field. In the *Label* field enter something that will allow to easily indentify the Appsfire AdUnit.
 
-Then put `{"sdkKey": "INSERT_YOUR_APPSFIRE_API_KEY", "isDebug": "1"}` in the Parameter section.
-To turn off debug mode when you release your app, use "0" instead of "1" for isDebug.
+4. In your app, initialize the Appsfire SDK as usual, for instance:
+
+	private static AFAdSDK adSdk = AFSDKFactory.getAFAdSDK().
+												setAPIKey(YOUR_API_KEY).
+												setAPISecret(YOUR_API_SECRET).
+												setFeatures(Arrays.asList(AFSDKFeature.AFSDKFeatureEngage, AFSDKFeature.AFSDKFeatureMonetization)).
+												setDebugModeEnabled(IS_AFADSDK_DEBUG);
 
 4. You should be good to go after these steps. To make sure, you can **run** the AdMob Mediation Demo project with you AdMob interstitial Unit Id and see a test interstitial.
 

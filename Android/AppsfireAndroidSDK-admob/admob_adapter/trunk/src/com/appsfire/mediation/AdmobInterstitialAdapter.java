@@ -50,8 +50,6 @@ public class AdmobInterstitialAdapter implements CustomEventInterstitial,  AFAdS
 	public void requestInterstitialAd(CustomEventInterstitialListener listener,
 			Activity activity, String label, String serverParameters, MediationAdRequest mediationAdRequest,
 			Object customEventExtra) {
-		String sdkKey = null, isDebug = null;
-		
 		mContext = activity;
 		mListener = listener;
 		
@@ -59,30 +57,9 @@ public class AdmobInterstitialAdapter implements CustomEventInterstitial,  AFAdS
 		
 		Log.d (CLASS_TAG, "requestInterstitialAd");
 		
-		try {
-			JsonElement jelement = new JsonParser().parse(serverParameters);
-			JsonObject  jobject = jelement.getAsJsonObject();
-			
-			sdkKey = jobject.get("sdkKey").getAsString();
-			isDebug = jobject.get("isDebug").getAsString();
-		} catch (Exception e) {
-			Log.d (CLASS_TAG, "exception parsing server parameters: " + e.toString ());
-		}
-		
-		if (adSdk == null) {
-        	// Initialize SDK
-			Log.d (CLASS_TAG, "initialize SDK");
-        	adSdk = AFSDKFactory.getAFAdSDK().
-			        setFeatures(Arrays.asList(AFSDKFeature.AFSDKFeatureMonetization)).
-					setAPIKey(sdkKey).
-					setEventsDelegate(this).
-					setDebugModeEnabled(isDebug != null && !isDebug.equalsIgnoreCase("0"));
-        	adSdk.prepare(activity);
-        }
-		else {
-			Log.d (CLASS_TAG, "SDK already initialized");
-			mListener.onReceivedAd();
-		}
+    	adSdk = AFSDKFactory.getAFAdSDK();
+    	adSdk.setEventsDelegate(this);
+		mListener.onReceivedAd();
 	}
 	
 	public void showInterstitial() {
@@ -180,4 +157,11 @@ public class AdmobInterstitialAdapter implements CustomEventInterstitial,  AFAdS
 			mListener.onDismissScreen();
 	}
 
+	@Override
+	public void onLeaveApplication() {
+		// Leaving application
+		Log.i (CLASS_TAG,"onLeaveApplication");
+		if (mContext != null && mListener != null)
+			mListener.onLeaveApplication();
+	}
 }
