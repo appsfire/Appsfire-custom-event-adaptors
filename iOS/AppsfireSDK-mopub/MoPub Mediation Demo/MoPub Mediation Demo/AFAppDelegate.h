@@ -2,8 +2,8 @@
 //  AFAppDelegate.h
 //  MoPub Mediation Demo
 //
-//  Created by Ali Karagoz on 25/10/2013.
-//  Copyright (c) 2013 Appsfire. All rights reserved.
+//  Created by Vincent Germain on 13/04/2015.
+//  Copyright (c) 2015 Appsfire. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>

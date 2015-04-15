@@ -28,14 +28,10 @@
 @class MPTimer;
 @class MPGeolocationProvider;
 @class CLLocationManager;
+@class MPLogEventRecorder;
+@class MPNetworkManager;
 
 typedef id(^MPSingletonProviderBlock)();
-
-typedef enum {
-    MPTwitterAvailabilityNone = 0,
-    MPTwitterAvailabilityApp = 1 << 0,
-    MPTwitterAvailabilityNative = 1 << 1,
-} MPTwitterAvailability;
 
 @interface MPCoreInstanceProvider : NSObject
 
@@ -60,14 +56,12 @@ typedef enum {
 - (NSOperationQueue *)sharedOperationQueue;
 - (MPAnalyticsTracker *)sharedMPAnalyticsTracker;
 - (MPReachability *)sharedMPReachability;
+- (MPLogEventRecorder *)sharedLogEventRecorder;
+- (MPNetworkManager *)sharedNetworkManager;
 
 // This call may return nil and may not update if the user hot-swaps the device's sim card.
 - (NSDictionary *)sharedCarrierInfo;
 
 - (MPTimer *)buildMPTimerWithTimeInterval:(NSTimeInterval)seconds target:(id)target selector:(SEL)selector repeats:(BOOL)repeats;
-
-- (MPTwitterAvailability)twitterAvailabilityOnDevice;
-- (void)resetTwitterAppInstallCheck;
-
 
 @end

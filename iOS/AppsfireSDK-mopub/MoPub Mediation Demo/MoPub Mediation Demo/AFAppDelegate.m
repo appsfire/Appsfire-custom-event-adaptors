@@ -2,8 +2,8 @@
 //  AFAppDelegate.m
 //  MoPub Mediation Demo
 //
-//  Created by Ali Karagoz on 17/10/2013.
-//  Copyright (c) 2013 Appsfire. All rights reserved.
+//  Created by Vincent Germain on 13/04/2015.
+//  Copyright (c) 2015 Appsfire. All rights reserved.
 //
 
 #import "AFAppDelegate.h"
@@ -15,18 +15,21 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     
+    NSError *error;
+    AFViewController *viewController;
+    
     /*
      * Appsfire SDK.
      */
     
     #error Add your Appsfire SDK Token and Secret Key below.
-    NSError *error = [AppsfireSDK connectWithSDKToken:@"" secretKey:@"" features:AFSDKFeatureMonetization parameters:nil];
+    error = [AppsfireSDK connectWithSDKToken:@"" secretKey:@"" features:AFSDKFeatureMonetization parameters:nil];
     if (error) {
         NSLog(@"Error while initializing the Appsfire SDK: %@", error.description);
     }
     
     #if DEBUG
-    #warning Replace by `NO` if you don't want to see test Ads in DEBUG mode.
+        #warning Replace by `NO` if you don't want to see test Ads in DEBUG mode.
         [AppsfireAdSDK setDebugModeEnabled:YES];
     #endif
     
@@ -35,7 +38,7 @@
      */
     
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-    AFViewController *viewController = [[AFViewController alloc] init];
+    viewController = [[AFViewController alloc] init];
     self.window.rootViewController = viewController;
     
     [self.window makeKeyAndVisible];
