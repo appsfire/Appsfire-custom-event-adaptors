@@ -14,6 +14,7 @@
 #import "MPIdentityProvider.h"
 #import "MPCoreInstanceProvider.h"
 #import "MPReachability.h"
+#import "MPAPIEndpoints.h"
 
 static NSString * const kMoPubInterfaceOrientationPortrait = @"p";
 static NSString * const kMoPubInterfaceOrientationLandscape = @"l";
@@ -37,7 +38,6 @@ static NSInteger const kAdSequenceNone = -1;
 + (NSString *)queryParameterForMobileNetworkCode;
 + (NSString *)queryParameterForMobileCountryCode;
 + (NSString *)queryParameterForDeviceName;
-+ (NSString *)queryParameterForTwitterAvailability;
 + (NSString *)queryParameterForDesiredAdAssets:(NSArray *)assets;
 + (NSString *)queryParameterForAdSequence:(NSInteger)adSequence;
 + (BOOL)advertisingTrackingEnabled;
@@ -91,8 +91,8 @@ static NSInteger const kAdSequenceNone = -1;
              desiredAssets:(NSArray *)assets
                 adSequence:(NSInteger)adSequence
 {
-    NSString *URLString = [NSString stringWithFormat:@"http://%@/m/ad?v=%@&udid=%@&id=%@&%@=%@",
-                           testing ? HOSTNAME_FOR_TESTING : HOSTNAME,
+    NSString *URLString = [NSString stringWithFormat:@"%@?v=%@&udid=%@&id=%@&%@=%@",
+                           [MPAPIEndpoints baseURLStringWithPath:MOPUB_API_PATH_AD_REQUEST testing:testing],
                            MP_SERVER_VERSION,
                            [MPIdentityProvider identifier],
                            [adUnitID stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding],
@@ -112,7 +112,6 @@ static NSInteger const kAdSequenceNone = -1;
     URLString = [URLString stringByAppendingString:[self queryParameterForMobileNetworkCode]];
     URLString = [URLString stringByAppendingString:[self queryParameterForMobileCountryCode]];
     URLString = [URLString stringByAppendingString:[self queryParameterForDeviceName]];
-    URLString = [URLString stringByAppendingString:[self queryParameterForTwitterAvailability]];
     URLString = [URLString stringByAppendingString:[self queryParameterForDesiredAdAssets:assets]];
     URLString = [URLString stringByAppendingString:[self queryParameterForAdSequence:adSequence]];
 
@@ -258,19 +257,6 @@ static NSInteger const kAdSequenceNone = -1;
 {
     NSString *deviceName = [[UIDevice currentDevice] hardwareDeviceName];
     return deviceName ? [NSString stringWithFormat:@"&dn=%@", [deviceName URLEncodedString]] : @"";
-}
-
-+ (NSString *)queryParameterForTwitterAvailability
-{
-    MPTwitterAvailability twitterAvailability = [[MPCoreInstanceProvider sharedProvider] twitterAvailabilityOnDevice];
-    NSString *queryString = @"";
-
-    if (twitterAvailability)
-    {
-        queryString = [NSString stringWithFormat:@"&ts=%u", twitterAvailability];
-    }
-
-    return queryString;
 }
 
 + (NSString *)queryParameterForDesiredAdAssets:(NSArray *)assets
