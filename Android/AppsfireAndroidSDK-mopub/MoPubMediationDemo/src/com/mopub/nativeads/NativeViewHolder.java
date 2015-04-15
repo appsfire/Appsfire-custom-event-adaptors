@@ -1,25 +1,30 @@
 package com.mopub.nativeads;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.mopub.common.util.MoPubLog;
-
-import static com.mopub.nativeads.NativeResponse.Parameter.isImageKey;
+import com.mopub.common.VisibleForTesting;
+import com.mopub.common.logging.MoPubLog;
 
 class NativeViewHolder {
-    TextView titleView;
-    TextView textView;
-    TextView callToActionView;
-    ImageView mainImageView;
-    ImageView iconImageView;
+    @Nullable TextView titleView;
+    @Nullable TextView textView;
+    @Nullable TextView callToActionView;
+    @Nullable ImageView mainImageView;
+    @Nullable ImageView iconImageView;
+
+    @VisibleForTesting
+    static final NativeViewHolder EMPTY_VIEW_HOLDER = new NativeViewHolder();
 
     // Use fromViewBinder instead of a constructor
     private NativeViewHolder() {}
 
-    static NativeViewHolder fromViewBinder(final View view, final ViewBinder viewBinder) {
-        NativeViewHolder nativeViewHolder = new NativeViewHolder();
+    @NonNull
+    static NativeViewHolder fromViewBinder(@NonNull final View view, @NonNull final ViewBinder viewBinder) {
+        final NativeViewHolder nativeViewHolder = new NativeViewHolder();
 
         try {
             nativeViewHolder.titleView = (TextView) view.findViewById(viewBinder.titleId);
@@ -27,54 +32,46 @@ class NativeViewHolder {
             nativeViewHolder.callToActionView = (TextView) view.findViewById(viewBinder.callToActionId);
             nativeViewHolder.mainImageView = (ImageView) view.findViewById(viewBinder.mainImageId);
             nativeViewHolder.iconImageView = (ImageView) view.findViewById(viewBinder.iconImageId);
-        } catch (ClassCastException e) {
-            MoPubLog.d("Could not cast View from id in ViewBinder to expected View type", e);
-            return null;
+            return nativeViewHolder;
+        } catch (ClassCastException exception) {
+            MoPubLog.w("Could not cast from id in ViewBinder to expected View type", exception);
+            return EMPTY_VIEW_HOLDER;
         }
-
-        return nativeViewHolder;
     }
 
-    void update(final NativeResponse nativeResponse) {
+    void update(@NonNull final NativeResponse nativeResponse) {
         addTextView(titleView, nativeResponse.getTitle());
-        addTextView(textView, nativeResponse.getSubtitle());
+        addTextView(textView, nativeResponse.getText());
         addTextView(callToActionView, nativeResponse.getCallToAction());
-
         nativeResponse.loadMainImage(mainImageView);
         nativeResponse.loadIconImage(iconImageView);
     }
 
-    void updateExtras(final View outerView,
-                      final NativeResponse nativeResponse,
-                      final ViewBinder viewBinder) {
+    void updateExtras(@NonNull final View outerView,
+                      @NonNull final NativeResponse nativeResponse,
+                      @NonNull final ViewBinder viewBinder) {
         for (final String key : viewBinder.extras.keySet()) {
             final int resourceId = viewBinder.extras.get(key);
             final View view = outerView.findViewById(resourceId);
             final Object content = nativeResponse.getExtra(key);
 
-            if (isImageKey(key)) {
-                if (view instanceof ImageView) {
-                    // Clear previous image
-                    ((ImageView) view).setImageDrawable(null);
-                    nativeResponse.loadExtrasImage(key, (ImageView) view);
-                } else {
-                    MoPubLog.d("View bound to " + key + " should be an instance of ImageView.");
+            if (view instanceof ImageView) {
+                // Clear previous image
+                ((ImageView) view).setImageDrawable(null);
+                nativeResponse.loadExtrasImage(key, (ImageView) view);
+            } else if (view instanceof TextView) {
+                // Clear previous text value
+                ((TextView) view).setText(null);
+                if (content instanceof String) {
+                    addTextView((TextView) view, (String) content);
                 }
             } else {
-                if (view instanceof TextView) {
-                    // Clear previous text value
-                    ((TextView) view).setText(null);
-                    if (content instanceof String) {
-                        addTextView((TextView) view, (String) content);
-                    }
-                } else {
-                    MoPubLog.d("View bound to " + key + " should be an instance of TextView.");
-                }
+                MoPubLog.d("View bound to " + key + " should be an instance of TextView or ImageView.");
             }
         }
     }
 
-    private void addTextView(final TextView textView, final String contents) {
+    private void addTextView(@Nullable final TextView textView, @Nullable final String contents) {
         if (textView == null) {
             MoPubLog.d("Attempted to add text (" + contents + ") to null TextView.");
             return;

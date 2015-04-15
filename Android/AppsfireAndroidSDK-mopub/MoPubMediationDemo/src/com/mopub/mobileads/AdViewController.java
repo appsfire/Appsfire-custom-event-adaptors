@@ -1,35 +1,3 @@
-/*
- * Copyright (c) 2010-2013, MoPub Inc.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *  Redistributions of source code must retain the above copyright
- *   notice, this list of conditions and the following disclaimer.
- *
- *  Redistributions in binary form must reproduce the above copyright
- *   notice, this list of conditions and the following disclaimer in the
- *   documentation and/or other materials provided with the distribution.
- *
- *  Neither the name of 'MoPub Inc.' nor the names of its contributors
- *   may be used to endorse or promote products derived from this software
- *   without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
- * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 package com.mopub.mobileads;
 
 import android.content.Context;
@@ -38,60 +6,88 @@ import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
-import com.mopub.common.util.Dips;
-import com.mopub.mobileads.factories.AdFetcherFactory;
-import com.mopub.mobileads.factories.HttpClientFactory;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 
-import java.util.*;
+import com.mopub.common.AdReport;
+import com.mopub.common.ClientMetadata;
+import com.mopub.common.Constants;
+import com.mopub.common.VisibleForTesting;
+import com.mopub.common.event.MoPubEvents;
+import com.mopub.common.logging.MoPubLog;
+import com.mopub.common.util.Dips;
+import com.mopub.common.util.Utils;
+import com.mopub.mraid.MraidNativeCommandHandler;
+import com.mopub.network.AdRequest;
+import com.mopub.network.AdResponse;
+import com.mopub.network.MoPubNetworkError;
+import com.mopub.network.Networking;
+import com.mopub.network.TrackingRequest;
+import com.mopub.volley.RequestQueue;
+import com.mopub.volley.VolleyError;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.WeakHashMap;
 
 import static android.Manifest.permission.ACCESS_NETWORK_STATE;
-import static com.mopub.common.GpsHelper.GpsHelperListener;
-import static com.mopub.common.GpsHelper.asyncFetchAdvertisingInfo;
-import static com.mopub.common.GpsHelper.asyncFetchAdvertisingInfoIfNotCached;
-import static com.mopub.common.LocationService.LocationAwareness;
-import static com.mopub.common.LocationService.getLastKnownLocation;
-import static com.mopub.mobileads.MoPubView.DEFAULT_LOCATION_PRECISION;
+import static com.mopub.network.MoPubNetworkError.Reason.NO_FILL;
+import static com.mopub.network.MoPubNetworkError.Reason.WARMING_UP;
 
 public class AdViewController {
-    static final int MINIMUM_REFRESH_TIME_MILLISECONDS = 10000;
-    static final int DEFAULT_REFRESH_TIME_MILLISECONDS = 60000;
+    static final int DEFAULT_REFRESH_TIME_MILLISECONDS = 60000;  // 1 minute
+    static final int MAX_REFRESH_TIME_MILLISECONDS = 600000; // 10 minutes
+    static final double BACKOFF_FACTOR = 1.5;
     private static final FrameLayout.LayoutParams WRAP_AND_CENTER_LAYOUT_PARAMS =
             new FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.WRAP_CONTENT,
                     FrameLayout.LayoutParams.WRAP_CONTENT,
                     Gravity.CENTER);
-    private static WeakHashMap<View,Boolean> sViewShouldHonorServerDimensions = new WeakHashMap<View, Boolean>();;
+    private final static WeakHashMap<View,Boolean> sViewShouldHonorServerDimensions = new WeakHashMap<View, Boolean>();
 
     private final Context mContext;
-    private GpsHelperListener mGpsHelperListener;
+    private final long mBroadcastIdentifier;
+
+    @Nullable
     private MoPubView mMoPubView;
     private final WebViewAdUrlGenerator mUrlGenerator;
-    private AdFetcher mAdFetcher;
-    private AdConfiguration mAdConfiguration;
+
+    @Nullable
+    private AdResponse mAdResponse;
     private final Runnable mRefreshRunnable;
+    @Nullable
+    private final AdRequest.Listener mAdListener;
 
     private boolean mIsDestroyed;
     private Handler mHandler;
     private boolean mIsLoading;
     private String mUrl;
 
+    // This is the power of the exponential term in the exponential backoff calculation.
+    private int mBackoffPower = 1;
+
     private Map<String, Object> mLocalExtras = new HashMap<String, Object>();
     private boolean mAutoRefreshEnabled = true;
+    private boolean mPreviousAutoRefreshSetting = true;
     private String mKeywords;
     private Location mLocation;
-    private LocationAwareness mLocationAwareness = LocationAwareness.NORMAL;
-    private int mLocationPrecision = DEFAULT_LOCATION_PRECISION;
-    private boolean mIsFacebookSupported = true;
     private boolean mIsTesting;
+    private boolean mAdWasLoaded;
+    @Nullable
+    private String mAdUnitId;
+    private int mTimeoutMilliseconds;
+    @Nullable
+    private AdRequest mActiveRequest;
+    @Nullable
+    private Integer mRefreshTimeMillis;
 
-    protected static void setShouldHonorServerDimensions(View view) {
+    public static void setShouldHonorServerDimensions(View view) {
         sViewShouldHonorServerDimensions.put(view, true);
     }
 
@@ -102,72 +98,120 @@ public class AdViewController {
     public AdViewController(Context context, MoPubView view) {
         mContext = context;
         mMoPubView = view;
+        // Default timeout means "never refresh"
+        mTimeoutMilliseconds = -1;
+        mBroadcastIdentifier = Utils.generateUniqueId();
 
-        mUrlGenerator = new WebViewAdUrlGenerator(context);
-        mAdConfiguration = new AdConfiguration(mContext);
+        mUrlGenerator = new WebViewAdUrlGenerator(context,
+                MraidNativeCommandHandler.isStorePictureSupported(mContext));
 
-        mAdFetcher = AdFetcherFactory.create(this, mAdConfiguration.getUserAgent());
+        mAdListener = new AdRequest.Listener() {
+            @Override
+            public void onSuccess(final AdResponse response) {
+                onAdLoadSuccess(response);
+            }
 
-        mGpsHelperListener = new AdViewControllerGpsHelperListener();
-
-        asyncFetchAdvertisingInfo(mContext);
-
-        mRefreshRunnable = new Runnable() {
-            public void run() {
-                loadAd();
+            @Override
+            public void onErrorResponse(final VolleyError volleyError) {
+                onAdLoadError(volleyError);
             }
         };
 
+        mRefreshRunnable = new Runnable() {
+            public void run() {
+                internalLoadAd();
+            }
+        };
+        mRefreshTimeMillis = DEFAULT_REFRESH_TIME_MILLISECONDS;
         mHandler = new Handler();
     }
 
+    @VisibleForTesting
+    void onAdLoadSuccess(@NonNull final AdResponse adResponse) {
+        mBackoffPower = 1;
+        mAdResponse = adResponse;
+        // Do other ad loading setup. See AdFetcher & AdLoadTask.
+        mTimeoutMilliseconds = mAdResponse.getAdTimeoutMillis() == null
+                ? mTimeoutMilliseconds : mAdResponse.getAdTimeoutMillis();
+        mRefreshTimeMillis = mAdResponse.getRefreshTimeMillis();
+        setNotLoading();
+
+        // Get our custom event from the ad response and load into the view.
+        AdLoader adLoader = AdLoader.fromAdResponse(mAdResponse, this);
+        if (adLoader != null) {
+            adLoader.load();
+        }
+        scheduleRefreshTimerIfEnabled();
+    }
+
+    @VisibleForTesting
+    void onAdLoadError(final VolleyError error) {
+        MoPubErrorCode errorCode = MoPubErrorCode.UNSPECIFIED;
+        // Handle errors. Do backoff & retry if it makes sense.
+        if (error instanceof MoPubNetworkError) {
+            MoPubNetworkError mpError = (MoPubNetworkError) error;
+            if (mpError.getReason() == NO_FILL || mpError.getReason() == WARMING_UP) {
+                errorCode = MoPubErrorCode.NO_FILL;
+            }
+        }
+
+        if (error.networkResponse != null && error.networkResponse.statusCode >= 400) {
+            // Backoff with the retry timer.
+            mBackoffPower += 1;
+            errorCode = MoPubErrorCode.SERVER_ERROR;
+        }
+
+        setNotLoading();
+        adDidFail(errorCode);
+    }
+
+    @Nullable
     public MoPubView getMoPubView() {
         return mMoPubView;
     }
 
     public void loadAd() {
-        if (mAdConfiguration.getAdUnitId() == null) {
-            Log.d("MoPub", "Can't load an ad in this ad view because the ad unit ID is null. " +
+        mBackoffPower = 1;
+        internalLoadAd();
+    }
+
+    private void internalLoadAd() {
+        mAdWasLoaded = true;
+        if (TextUtils.isEmpty(mAdUnitId)) {
+            MoPubLog.d("Can't load an ad in this ad view because the ad unit ID is not set. " +
                     "Did you forget to call setAdUnitId()?");
             return;
         }
 
         if (!isNetworkAvailable()) {
-            Log.d("MoPub", "Can't load an ad because there is no network connectivity.");
+            MoPubLog.d("Can't load an ad because there is no network connectivity.");
             scheduleRefreshTimerIfEnabled();
             return;
         }
 
-        if (mLocation == null) {
-            mLocation = getLastKnownLocation(mContext, mLocationPrecision, mLocationAwareness);
-        }
-
-        // If we have access to Google Play Services (GPS) but the advertising info
-        // is not cached then guarantee we get it before building the ad request url
-        // in the callback, this is a requirement from Google
-        asyncFetchAdvertisingInfoIfNotCached(mContext, mGpsHelperListener);
+        String adUrl = generateAdUrl();
+        loadNonJavascript(adUrl);
     }
 
     void loadNonJavascript(String url) {
         if (url == null) return;
 
-        Log.d("MoPub", "Loading url: " + url);
+        MoPubLog.d("Loading url: " + url);
         if (mIsLoading) {
-            if (mAdConfiguration.getAdUnitId() != null) {
-                Log.i("MoPub", "Already loading an ad for " + mAdConfiguration.getAdUnitId() + ", wait to finish.");
+            if (!TextUtils.isEmpty(mAdUnitId)) {  // This shouldn't be able to happen?
+                MoPubLog.i("Already loading an ad for " + mAdUnitId + ", wait to finish.");
             }
             return;
         }
 
         mUrl = url;
-        mAdConfiguration.setFailUrl(null);
         mIsLoading = true;
 
         fetchAd(mUrl);
     }
 
     public void reload() {
-        Log.d("MoPub", "Reload ad: " + mUrl);
+        MoPubLog.d("Reload ad: " + mUrl);
         loadNonJavascript(mUrl);
     }
 
@@ -176,21 +220,29 @@ public class AdViewController {
 
         Log.v("MoPub", "MoPubErrorCode: " + (errorCode == null ? "" : errorCode.toString()));
 
-        if (mAdConfiguration.getFailUrl() != null) {
-            Log.d("MoPub", "Loading failover url: " + mAdConfiguration.getFailUrl());
-            loadNonJavascript(mAdConfiguration.getFailUrl());
+        final String failUrl = mAdResponse == null ? "" : mAdResponse.getFailoverUrl();
+        if (!TextUtils.isEmpty(failUrl)) {
+            MoPubLog.d("Loading failover url: " + failUrl);
+            loadNonJavascript(failUrl);
         } else {
             // No other URLs to try, so signal a failure.
             adDidFail(MoPubErrorCode.NO_FILL);
         }
     }
 
+    @Deprecated
     void setFailUrl(String failUrl) {
-        mAdConfiguration.setFailUrl(failUrl);
+        // Does nothing.
     }
 
     void setNotLoading() {
         this.mIsLoading = false;
+        if (mActiveRequest != null) {
+            if (!mActiveRequest.isCanceled()) {
+                mActiveRequest.cancel();
+            }
+            mActiveRequest = null;
+        }
     }
 
     public String getKeywords() {
@@ -199,14 +251,6 @@ public class AdViewController {
 
     public void setKeywords(String keywords) {
         mKeywords = keywords;
-    }
-
-    public boolean isFacebookSupported() {
-        return mIsFacebookSupported;
-    }
-
-    public void setFacebookSupported(boolean enabled) {
-        mIsFacebookSupported = enabled;
     }
 
     public Location getLocation() {
@@ -218,61 +262,91 @@ public class AdViewController {
     }
 
     public String getAdUnitId() {
-        return mAdConfiguration.getAdUnitId();
+        return mAdUnitId;
     }
 
-    public void setAdUnitId(String adUnitId) {
-        mAdConfiguration.setAdUnitId(adUnitId);
+    public void setAdUnitId(@NonNull String adUnitId) {
+        mAdUnitId = adUnitId;
+    }
+
+    public long getBroadcastIdentifier() {
+        return mBroadcastIdentifier;
     }
 
     public void setTimeout(int milliseconds) {
-        if (mAdFetcher != null) {
-            mAdFetcher.setTimeout(milliseconds);
-        }
+       mTimeoutMilliseconds = milliseconds;
     }
 
     public int getAdWidth() {
-        return mAdConfiguration.getWidth();
+        if (mAdResponse != null && mAdResponse.getWidth() != null) {
+            return mAdResponse.getWidth();
+        }
+
+        return 0;
     }
 
     public int getAdHeight() {
-        return mAdConfiguration.getHeight();
-    }
+        if (mAdResponse != null && mAdResponse.getHeight() != null) {
+            return mAdResponse.getHeight();
+        }
 
-    public String getClickthroughUrl() {
-        return mAdConfiguration.getClickthroughUrl();
+        return 0;
     }
 
     @Deprecated
-    public void setClickthroughUrl(String clickthroughUrl) {
-        mAdConfiguration.setClickthroughUrl(clickthroughUrl);
+    public String getClickTrackingUrl() {
+        return mAdResponse == null ? null : mAdResponse.getClickTrackingUrl();
     }
 
+    @Deprecated
     public String getRedirectUrl() {
-        return mAdConfiguration.getRedirectUrl();
+        return mAdResponse == null ? null : mAdResponse.getRedirectUrl();
     }
 
+    @Deprecated
     public String getResponseString() {
-        return mAdConfiguration.getResponseString();
+        return mAdResponse == null ? null : mAdResponse.getStringBody();
     }
 
     public boolean getAutorefreshEnabled() {
         return mAutoRefreshEnabled;
     }
 
-    public void setAutorefreshEnabled(boolean enabled) {
-        mAutoRefreshEnabled = enabled;
+    void pauseRefresh() {
+        mPreviousAutoRefreshSetting = mAutoRefreshEnabled;
+        setAutorefreshEnabled(false);
+    }
 
-        if (mAdConfiguration.getAdUnitId() != null) {
-            Log.d("MoPub", "Automatic refresh for " + mAdConfiguration + " set to: " + enabled + ".");
+    void unpauseRefresh() {
+        setAutorefreshEnabled(mPreviousAutoRefreshSetting);
+    }
 
+    void forceSetAutorefreshEnabled(boolean enabled) {
+        mPreviousAutoRefreshSetting = enabled;
+        setAutorefreshEnabled(enabled);
+    }
+
+    private void setAutorefreshEnabled(boolean enabled) {
+        final boolean autorefreshChanged = mAdWasLoaded && (mAutoRefreshEnabled != enabled);
+        if (autorefreshChanged) {
+            final String enabledString = (enabled) ? "enabled" : "disabled";
+            MoPubLog.d("Refresh " + enabledString + " for ad unit (" + mAdUnitId + ").");
         }
 
-        if (mAutoRefreshEnabled) {
+        mAutoRefreshEnabled = enabled;
+        if (mAdWasLoaded && mAutoRefreshEnabled) {
             scheduleRefreshTimerIfEnabled();
-        } else {
+        } else if (!mAutoRefreshEnabled) {
             cancelRefreshTimer();
         }
+    }
+
+    @Nullable
+    public AdReport getAdReport() {
+        if (mAdUnitId != null && mAdResponse != null) {
+            return new AdReport(mAdUnitId, ClientMetadata.getInstance(mContext), mAdResponse);
+        }
+        return null;
     }
 
     public boolean getTesting() {
@@ -283,16 +357,9 @@ public class AdViewController {
         mIsTesting = enabled;
     }
 
-    int getLocationPrecision() {
-        return mLocationPrecision;
-    }
-
-    void setLocationPrecision(int precision) {
-        mLocationPrecision = Math.max(0, precision);
-    }
-
-    AdConfiguration getAdConfiguration() {
-        return mAdConfiguration;
+    @Deprecated
+    Object getAdConfiguration() {
+        return null;
     }
 
     boolean isDestroyed() {
@@ -307,84 +374,57 @@ public class AdViewController {
             return;
         }
 
+        if (mActiveRequest != null) {
+            mActiveRequest.cancel();
+            mActiveRequest = null;
+        }
+
         setAutorefreshEnabled(false);
         cancelRefreshTimer();
 
         // WebView subclasses are not garbage-collected in a timely fashion on Froyo and below,
         // thanks to some persistent references in WebViewCore. We manually release some resources
         // to compensate for this "leak".
-
-        mAdFetcher.cleanup();
-        mAdFetcher = null;
-
-        mAdConfiguration.cleanup();
-
         mMoPubView = null;
 
         // Flag as destroyed. LoadUrlTask checks this before proceeding in its onPostExecute().
         mIsDestroyed = true;
     }
 
-    void configureUsingHttpResponse(final HttpResponse response) {
-        mAdConfiguration.addHttpResponse(response);
-    }
-
     Integer getAdTimeoutDelay() {
-        return mAdConfiguration.getAdTimeoutDelay();
-    }
-
-    int getRefreshTimeMilliseconds() {
-        return mAdConfiguration.getRefreshTimeMilliseconds();
-    }
-
-    @Deprecated
-    void setRefreshTimeMilliseconds(int refreshTimeMilliseconds) {
-        mAdConfiguration.setRefreshTimeMilliseconds(refreshTimeMilliseconds);
+        return mAdResponse == null ? null : mAdResponse.getAdTimeoutMillis();
     }
 
     void trackImpression() {
-        new Thread(new Runnable() {
-            public void run () {
-                if (mAdConfiguration.getImpressionUrl() == null) return;
-
-                DefaultHttpClient httpClient = HttpClientFactory.create();
-                try {
-                    HttpGet httpget = new HttpGet(mAdConfiguration.getImpressionUrl());
-                    httpget.addHeader("User-Agent", mAdConfiguration.getUserAgent());
-                    httpClient.execute(httpget);
-                } catch (Exception e) {
-                    Log.d("MoPub", "Impression tracking failed : " + mAdConfiguration.getImpressionUrl(), e);
-                } finally {
-                    httpClient.getConnectionManager().shutdown();
-                }
-            }
-        }).start();
+        if (mAdResponse != null) {
+            TrackingRequest.makeTrackingHttpRequest(mAdResponse.getImpressionTrackingUrl(),
+                    mContext, MoPubEvents.Type.IMPRESSION_REQUEST);
+        }
     }
 
     void registerClick() {
-        new Thread(new Runnable() {
-            public void run () {
-                if (mAdConfiguration.getClickthroughUrl() == null) return;
-
-                DefaultHttpClient httpClient = HttpClientFactory.create();
-                try {
-                    Log.d("MoPub", "Tracking click for: " + mAdConfiguration.getClickthroughUrl());
-                    HttpGet httpget = new HttpGet(mAdConfiguration.getClickthroughUrl());
-                    httpget.addHeader("User-Agent", mAdConfiguration.getUserAgent());
-                    httpClient.execute(httpget);
-                } catch (Exception e) {
-                    Log.d("MoPub", "Click tracking failed: " + mAdConfiguration.getClickthroughUrl(), e);
-                } finally {
-                    httpClient.getConnectionManager().shutdown();
-                }
-            }
-        }).start();
+        if (mAdResponse != null) {
+            TrackingRequest.makeTrackingHttpRequest(mAdResponse.getClickTrackingUrl(),
+                    mContext, MoPubEvents.Type.CLICK_REQUEST);
+        }
     }
 
-    void fetchAd(String mUrl) {
-        if (mAdFetcher != null) {
-            mAdFetcher.fetchAdForUrl(mUrl);
+    void fetchAd(String url) {
+        MoPubView moPubView = getMoPubView();
+        if (moPubView == null) {
+            MoPubLog.d("Can't load an ad in this ad view because it was destroyed.");
+            setNotLoading();
+            return;
         }
+
+        AdRequest adRequest = new AdRequest(url,
+                moPubView.getAdFormat(),
+                mAdUnitId,
+                mAdListener
+        );
+        RequestQueue requestQueue = Networking.getRequestQueue(mContext);
+        requestQueue.add(adRequest);
+        mActiveRequest = adRequest;
     }
 
     void forceRefresh() {
@@ -394,46 +434,52 @@ public class AdViewController {
 
     String generateAdUrl() {
         return mUrlGenerator
-                .withAdUnitId(mAdConfiguration.getAdUnitId())
+                .withAdUnitId(mAdUnitId)
                 .withKeywords(mKeywords)
-                .withFacebookSupported(mIsFacebookSupported)
                 .withLocation(mLocation)
-                .generateUrlString(getServerHostname());
+                .generateUrlString(Constants.HOST);
     }
 
     void adDidFail(MoPubErrorCode errorCode) {
-        Log.i("MoPub", "Ad failed to load.");
+        MoPubLog.i("Ad failed to load.");
         setNotLoading();
+
+        MoPubView moPubView = getMoPubView();
+        if (moPubView == null) {
+            return;
+        }
+
         scheduleRefreshTimerIfEnabled();
-        getMoPubView().adFailed(errorCode);
+        moPubView.adFailed(errorCode);
     }
 
     void scheduleRefreshTimerIfEnabled() {
         cancelRefreshTimer();
-        if (mAutoRefreshEnabled && mAdConfiguration.getRefreshTimeMilliseconds() > 0) {
-            mHandler.postDelayed(mRefreshRunnable, mAdConfiguration.getRefreshTimeMilliseconds());
-        }
+        if (mAutoRefreshEnabled && mRefreshTimeMillis != null && mRefreshTimeMillis > 0) {
 
+            mHandler.postDelayed(mRefreshRunnable,
+                    Math.min(MAX_REFRESH_TIME_MILLISECONDS,
+                            mRefreshTimeMillis * (long) Math.pow(BACKOFF_FACTOR, mBackoffPower)));
+        }
     }
 
     void setLocalExtras(Map<String, Object> localExtras) {
         mLocalExtras = (localExtras != null)
-                ? new HashMap<String,Object>(localExtras)
-                : new HashMap<String,Object>();
+                ? new TreeMap<String,Object>(localExtras)
+                : new TreeMap<String,Object>();
     }
 
+    /**
+     * Returns a copied map of localExtras
+     */
     Map<String, Object> getLocalExtras() {
         return (mLocalExtras != null)
-                ? new HashMap<String,Object>(mLocalExtras)
-                : new HashMap<String,Object>();
+                ? new TreeMap<String,Object>(mLocalExtras)
+                : new TreeMap<String,Object>();
     }
 
     private void cancelRefreshTimer() {
         mHandler.removeCallbacks(mRefreshRunnable);
-    }
-
-    private String getServerHostname() {
-        return mIsTesting ? MoPubView.HOST_FOR_TESTING : MoPubView.HOST;
     }
 
     private boolean isNetworkAvailable() {
@@ -466,10 +512,14 @@ public class AdViewController {
     }
 
     private FrameLayout.LayoutParams getAdLayoutParams(View view) {
-        int width = mAdConfiguration.getWidth();
-        int height = mAdConfiguration.getHeight();
+        Integer width = null;
+        Integer height = null;
+        if (mAdResponse != null) {
+            width = mAdResponse.getWidth();
+            height = mAdResponse.getHeight();
+        }
 
-        if (getShouldHonorServerDimensions(view) && width > 0 && height > 0) {
+        if (width != null && height != null && getShouldHonorServerDimensions(view) && width > 0 && height > 0) {
             int scaledWidth = Dips.asIntPixels(width, mContext);
             int scaledHeight = Dips.asIntPixels(height, mContext);
 
@@ -477,19 +527,6 @@ public class AdViewController {
         } else {
             return WRAP_AND_CENTER_LAYOUT_PARAMS;
         }
-    }
-
-    class AdViewControllerGpsHelperListener implements GpsHelperListener {
-        @Override
-        public void onFetchAdInfoCompleted() {
-            String adUrl = generateAdUrl();
-            loadNonJavascript(adUrl);
-        }
-    }
-
-    @Deprecated
-    void setGpsHelperListener(GpsHelperListener gpsHelperListener) {
-        mGpsHelperListener = gpsHelperListener;
     }
 
     @Deprecated
@@ -508,4 +545,23 @@ public class AdViewController {
     public void customEventActionWillBegin() {
         registerClick();
     }
+
+    @Deprecated
+    public void setClickthroughUrl(String clickthroughUrl) {
+        // Does nothing
+    }
+
+    /**
+     * @deprecated As of release 2.4
+     */
+    @Deprecated
+    public boolean isFacebookSupported() {
+        return false;
+    }
+
+    /**
+     * @deprecated As of release 2.4
+     */
+    @Deprecated
+    public void setFacebookSupported(boolean enabled) {}
 }

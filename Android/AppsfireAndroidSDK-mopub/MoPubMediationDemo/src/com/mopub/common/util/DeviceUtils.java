@@ -1,13 +1,20 @@
 package com.mopub.common.util;
 
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
+import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.StatFs;
 import android.provider.Settings;
+import android.support.annotation.NonNull;
+import android.util.DisplayMetrics;
+import android.view.Surface;
+
+import com.mopub.common.logging.MoPubLog;
 
 import org.apache.http.conn.util.InetAddressUtils;
 
@@ -15,11 +22,11 @@ import java.io.File;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.Locale;
 
 import static android.Manifest.permission.ACCESS_NETWORK_STATE;
 import static android.Manifest.permission.INTERNET;
 import static com.mopub.common.util.Reflection.MethodBuilder;
-
 import static com.mopub.common.util.VersionCode.HONEYCOMB;
 import static com.mopub.common.util.VersionCode.currentApiLevel;
 import static java.util.Collections.list;
@@ -62,7 +69,7 @@ public class DeviceUtils {
         for (final NetworkInterface networkInterface : list(NetworkInterface.getNetworkInterfaces())) {
             for (final InetAddress address : list(networkInterface.getInetAddresses())) {
                 if (!address.isLoopbackAddress()) {
-                    String hostAddress = address.getHostAddress().toUpperCase();
+                    String hostAddress = address.getHostAddress().toUpperCase(Locale.US);
                     if (ip.matches(hostAddress)) {
                         return ip.toString(hostAddress);
                     }
@@ -80,10 +87,6 @@ public class DeviceUtils {
 
         String udid = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
         return Utils.sha1(udid);
-    }
-
-    public static String getUserAgent() {
-        return System.getProperty("http.agent");
     }
 
     public static boolean isNetworkAvailable(final Context context) {
@@ -136,9 +139,8 @@ public class DeviceUtils {
         return (int) result;
     }
 
-    public static long diskCacheSizeBytes(File dir) {
-        long size = MIN_DISK_CACHE_SIZE;
-
+    public static long diskCacheSizeBytes(File dir, long minSize) {
+        long size = minSize;
         try {
             StatFs statFs = new StatFs(dir.getAbsolutePath());
             long availableBytes = ((long) statFs.getBlockCount()) * statFs.getBlockSize();
@@ -149,5 +151,54 @@ public class DeviceUtils {
 
         // Bound inside min/max size for disk cache.
         return Math.max(Math.min(size, MAX_DISK_CACHE_SIZE), MIN_DISK_CACHE_SIZE);
+    }
+
+    public static long diskCacheSizeBytes(File dir) {
+        return diskCacheSizeBytes(dir, MIN_DISK_CACHE_SIZE);
+    }
+
+    public static int getScreenOrientation(@NonNull final Activity activity) {
+        final int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+        final DisplayMetrics displayMetrics = new DisplayMetrics();
+        activity.getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+
+        final int width = displayMetrics.widthPixels;
+        final int height = displayMetrics.heightPixels;
+
+        final boolean isPortrait =
+                (((rotation == Surface.ROTATION_0 || rotation == Surface.ROTATION_180)) &&
+                height > width) ||
+                (((rotation == Surface.ROTATION_90 || rotation == Surface.ROTATION_270)) &&
+                width > height);
+
+        if (isPortrait) {
+            switch (rotation) {
+                case Surface.ROTATION_0:
+                    return ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+                case Surface.ROTATION_90:
+                    return ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+                case Surface.ROTATION_180:
+                    return ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+                case Surface.ROTATION_270:
+                    return ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+                default:
+                    MoPubLog.d("Unknown screen orientation. Defaulting to portrait.");
+                    return ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+            }
+        } else {
+            switch (rotation) {
+                case Surface.ROTATION_0:
+                    return ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+                case Surface.ROTATION_90:
+                    return ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+                case Surface.ROTATION_180:
+                    return ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+                case Surface.ROTATION_270:
+                    return ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+                default:
+                    MoPubLog.d("Unknown screen orientation. Defaulting to landscape.");
+                    return ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+            }
+        }
     }
 }

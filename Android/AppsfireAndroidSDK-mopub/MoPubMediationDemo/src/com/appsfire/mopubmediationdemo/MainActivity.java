@@ -1,7 +1,5 @@
 package com.appsfire.mopubmediationdemo;
 
-import java.util.Arrays;
-
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
@@ -9,8 +7,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.appsfire.adUnitJAR.exceptions.AFAdAlreadyDisplayedException;
-import com.appsfire.adUnitJAR.sdk.AFAdSDK.AFAdSDKModalType;
 import com.appsfire.mopubmediationdemo.R;
 import com.mopub.mobileads.MoPubErrorCode;
 import com.mopub.mobileads.MoPubInterstitial;
@@ -22,7 +18,7 @@ import com.mopub.mobileads.MoPubInterstitial.InterstitialAdListener;
 
 public class MainActivity extends Activity implements InterstitialAdListener {	
 	// Tag for logging messages
-	public static final String CLASS_TAG = "AFmopubmediationdemo";
+	public static final String CLASS_TAG = "Appsfire.MainActivity";
 	
 	// Mopub Ad Unit ID
 	private static final String MOPUB_AD_UNIT_ID = "fca6ab80352d4af3b04e8772f6deb974";
@@ -30,13 +26,12 @@ public class MainActivity extends Activity implements InterstitialAdListener {
 	// Mopub interstitial
 	private MoPubInterstitial mInterstitial;
 	
-	// true when interstitial is loaded and ready
-	private volatile boolean mInterstitialReady;
-	
 	// Create activity
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+		Log.d (CLASS_TAG, "onCreate");
+		
 		super.onCreate(savedInstanceState);
 
 		// Set main layout as content
@@ -44,6 +39,7 @@ public class MainActivity extends Activity implements InterstitialAdListener {
 		
 		// Initialize SDK
 		mInterstitial = new MoPubInterstitial(this, MOPUB_AD_UNIT_ID);
+		mInterstitial.setTesting(true);
         mInterstitial.setInterstitialAdListener(this);
         mInterstitial.load();
         
@@ -52,7 +48,7 @@ public class MainActivity extends Activity implements InterstitialAdListener {
 		final Activity activity = this;
 		actionButton.setOnClickListener (new Button.OnClickListener () {
 		    public void onClick(View v) {
-		    	if (mInterstitialReady) {
+		    	if (mInterstitial.isReady()) {
 		    		// Show interstitial
 			    	mInterstitial.show();
 				}
@@ -81,7 +77,6 @@ public class MainActivity extends Activity implements InterstitialAdListener {
     	Log.d (CLASS_TAG, "Mopub onInterstitialLoaded");
         if (interstitial.isReady()) {
         	Log.d (CLASS_TAG, "Mopub: interstitial is ready");
-        	mInterstitialReady = true;
         }
     }
 
@@ -102,6 +97,9 @@ public class MainActivity extends Activity implements InterstitialAdListener {
 
     @Override
     public void onInterstitialDismissed(MoPubInterstitial interstitial) {
-    	Log.d (CLASS_TAG, "Mopub onInterstitialDismissed");    	
+    	Log.d (CLASS_TAG, "Mopub onInterstitialDismissed");  
+    	
+    	// Cache a new ad
+    	mInterstitial.load();
     }
 }

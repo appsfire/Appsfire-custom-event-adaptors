@@ -1,48 +1,22 @@
-/*
- * Copyright (c) 2010-2013, MoPub Inc.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *  Redistributions of source code must retain the above copyright
- *   notice, this list of conditions and the following disclaimer.
- *
- *  Redistributions in binary form must reproduce the above copyright
- *   notice, this list of conditions and the following disclaimer in the
- *   documentation and/or other materials provided with the distribution.
- *
- *  Neither the name of 'MoPub Inc.' nor the names of its contributors
- *   may be used to endorse or promote products derived from this software
- *   without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
- * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 package com.mopub.mobileads;
 
 import android.content.Context;
-import android.util.Log;
+import android.graphics.Color;
+import android.graphics.PixelFormat;
+import android.os.Build.VERSION;
+import android.os.Build.VERSION_CODES;
+import android.support.annotation.NonNull;
+import android.view.Gravity;
+import android.view.WindowManager;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 
 import com.mopub.common.util.VersionCode;
 import com.mopub.common.util.Views;
 import com.mopub.mobileads.util.WebViews;
 
-import java.lang.reflect.Method;
-
 public class BaseWebView extends WebView {
+    private static boolean sDeadlockCleared = false;
     protected boolean mIsDestroyed;
 
     public BaseWebView(Context context) {
@@ -54,6 +28,11 @@ public class BaseWebView extends WebView {
         enablePlugins(false);
 
         WebViews.setDisableJSChromeClient(this);
+
+        if (!sDeadlockCleared) {
+            clearWebViewDeadlock(getContext());
+            sDeadlockCleared = true;
+        }
     }
 
     protected void enablePlugins(final boolean enabled) {
@@ -62,27 +41,10 @@ public class BaseWebView extends WebView {
             return;
         }
 
-        if (VersionCode.currentApiLevel().isBelow(VersionCode.FROYO)) {
-            // Note: this is needed to compile against api level 18.
-            try {
-                Method method = Class.forName("android.webkit.WebSettings").getDeclaredMethod("setPluginsEnabled", boolean.class);
-                method.invoke(getSettings(), enabled);
-            } catch (Exception e) {
-                Log.d("MoPub", "Unable to " + (enabled ? "enable" : "disable") + "WebSettings plugins for BaseWebView.");
-            }
+        if (enabled) {
+            getSettings().setPluginState(WebSettings.PluginState.ON);
         } else {
-
-            try {
-                Class<Enum> pluginStateClass = (Class<Enum>) Class.forName("android.webkit.WebSettings$PluginState");
-
-                Class<?>[] parameters = {pluginStateClass};
-                Method method = getSettings().getClass().getDeclaredMethod("setPluginState", parameters);
-
-                Object pluginState = Enum.valueOf(pluginStateClass, enabled ? "ON" : "OFF");
-                method.invoke(getSettings(), pluginState);
-            } catch (Exception e) {
-                Log.d("MoPub", "Unable to modify WebView plugin state.");
-            }
+            getSettings().setPluginState(WebSettings.PluginState.OFF);
         }
     }
 
@@ -90,7 +52,13 @@ public class BaseWebView extends WebView {
     public void destroy() {
         mIsDestroyed = true;
 
+        // Needed to prevent receiving the following error on Android versions using WebViewClassic
+        // https://code.google.com/p/android/issues/detail?id=65833.
         Views.removeFromParent(this);
+
+        // Even after removing from the parent, WebViewClassic can leak because of a static
+        // reference from HTML5VideoViewProcessor. Removing children fixes this problem.
+        removeAllViews();
         super.destroy();
     }
 
@@ -98,4 +66,43 @@ public class BaseWebView extends WebView {
     void setIsDestroyed(boolean isDestroyed) {
         mIsDestroyed = isDestroyed;
     }
+
+    /**
+     * This fixes https://code.google.com/p/android/issues/detail?id=63754,
+     * which occurs on KitKat devices. When a WebView containing an HTML5 video is
+     * is destroyed it can deadlock the WebView thread until another hardware accelerated WebView
+     * is added to the view hierarchy and restores the GL context. Since we need to use WebView
+     * before adding it to the view hierarchy, this method clears the deadlock by adding a
+     * separate invisible WebView.
+     *
+     * This potential deadlock must be cleared anytime you attempt to access a WebView that
+     * is not added to the view hierarchy.
+     */
+    private void clearWebViewDeadlock(@NonNull final Context context) {
+        if (VERSION.SDK_INT == VERSION_CODES.KITKAT) {
+            // Create an invisible webview
+            final WebView webView = new WebView(context.getApplicationContext());
+            webView.setBackgroundColor(Color.TRANSPARENT);
+
+            // For the deadlock to be cleared, we must load content and add to the view hierarchy. Since
+            // we don't have an activity context, we'll use a system window.
+            webView.loadDataWithBaseURL(null, "", "text/html", "UTF-8", null);
+            final WindowManager.LayoutParams params = new WindowManager.LayoutParams();
+            params.width = 1;
+            params.height = 1;
+            // Unlike other system window types TYPE_TOAST doesn't require extra permissions
+            params.type = WindowManager.LayoutParams.TYPE_TOAST;
+            params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                    | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                    | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED;
+            params.format = PixelFormat.TRANSPARENT;
+            params.gravity = Gravity.START | Gravity.TOP;
+            final WindowManager windowManager =
+                    (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+
+            windowManager.addView(webView, params);
+        }
+    }
+
+
 }

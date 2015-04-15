@@ -2,82 +2,101 @@ package com.mopub.nativeads;
 
 import android.content.Context;
 import android.location.Location;
-import android.os.Build;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.text.TextUtils;
 
 import com.mopub.common.AdUrlGenerator;
-import com.mopub.common.GpsHelper;
+import com.mopub.common.ClientMetadata;
+import com.mopub.common.Constants;
 import com.mopub.common.LocationService;
-import com.mopub.common.util.DeviceUtils;
 import com.mopub.common.MoPub;
+import com.mopub.common.util.DateAndTime;
 
 class NativeUrlGenerator extends AdUrlGenerator {
-    private static int sLocationPrecision = 6;
-    private static LocationService.LocationAwareness sLocationAwareness
-            = LocationService.LocationAwareness.NORMAL;
+    @Nullable private String mDesiredAssets;
+    @Nullable private String mSequenceNumber;
 
     NativeUrlGenerator(Context context) {
         super(context);
     }
 
+    @NonNull
     @Override
     public NativeUrlGenerator withAdUnitId(final String adUnitId) {
         mAdUnitId = adUnitId;
         return this;
     }
 
-    NativeUrlGenerator withRequest(final RequestParameters requestParameters) {
+    @NonNull
+    NativeUrlGenerator withRequest(@Nullable final RequestParameters requestParameters) {
         if (requestParameters != null) {
             mKeywords = requestParameters.getKeywords();
             mLocation = requestParameters.getLocation();
+            mDesiredAssets = requestParameters.getDesiredAssets();
         }
+        return this;
+    }
+
+    @NonNull
+    NativeUrlGenerator withSequenceNumber(final int sequenceNumber) {
+        mSequenceNumber = String.valueOf(sequenceNumber);
         return this;
     }
 
     @Override
     public String generateUrlString(final String serverHostname) {
-        initUrlString(serverHostname, Constants.NATIVE_HANDLER);
+        initUrlString(serverHostname, Constants.AD_HANDLER);
 
         setAdUnitId(mAdUnitId);
 
-        setSdkVersion(MoPub.SDK_VERSION);
-
-        setDeviceInfo(Build.MANUFACTURER, Build.MODEL, Build.PRODUCT);
-
-        setUdid(getUdidFromContext(mContext));
-
-        setDoNotTrack(GpsHelper.isLimitAdTrackingEnabled(mContext));
-
         setKeywords(mKeywords);
 
-        Location location = mLocation;
-        if (location == null) {
-            location = LocationService.getLastKnownLocation(mContext,
-                                                            sLocationPrecision,
-                                                            sLocationAwareness);
-        }
+        setLocation(mLocation);
 
-        setLocation(location);
+        ClientMetadata clientMetadata = ClientMetadata.getInstance(mContext);
+        setSdkVersion(clientMetadata.getSdkVersion());
 
-        setTimezone(getTimeZoneOffsetString());
+        setDeviceInfo(clientMetadata.getDeviceManufacturer(),
+                clientMetadata.getDeviceModel(),
+                clientMetadata.getDeviceProduct());
 
-        setOrientation(mContext.getResources().getConfiguration().orientation);
+        setTimezone(DateAndTime.getTimeZoneOffsetString());
 
-        setDensity(mContext.getResources().getDisplayMetrics().density);
+        setOrientation(clientMetadata.getOrientationString());
 
-        String networkOperator = getNetworkOperator();
+        setDensity(clientMetadata.getDensity());
+
+        String networkOperator = clientMetadata.getNetworkOperatorForUrl();
         setMccCode(networkOperator);
         setMncCode(networkOperator);
 
-        setIsoCountryCode(mTelephonyManager.getNetworkCountryIso());
-        setCarrierName(mTelephonyManager.getNetworkOperatorName());
+        setIsoCountryCode(clientMetadata.getIsoCountryCode());
+        setCarrierName(clientMetadata.getNetworkOperatorName());
 
-        setNetworkType(getActiveNetworkType());
+        setNetworkType(clientMetadata.getActiveNetworkType());
 
-        setAppVersion(getAppVersionFromContext(mContext));
+        setAppVersion(clientMetadata.getAppVersion());
 
-        setTwitterAppInstalledFlag();
+        setDesiredAssets();
+
+        setSequenceNumber();
+
+        appendAdvertisingInfoTemplates();
 
         return getFinalUrlString();
+    }
+
+    private void setSequenceNumber() {
+       if (!TextUtils.isEmpty(mSequenceNumber)) {
+           addParam("MAGIC_NO", mSequenceNumber);
+       }
+    }
+
+    private void setDesiredAssets() {
+        if (!TextUtils.isEmpty(mDesiredAssets)) {
+            addParam("assets", mDesiredAssets);
+        }
     }
 
     @Override

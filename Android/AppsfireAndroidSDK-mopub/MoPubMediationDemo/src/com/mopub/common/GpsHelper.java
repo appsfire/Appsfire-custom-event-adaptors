@@ -1,17 +1,17 @@
 package com.mopub.common;
 
 import android.content.Context;
-import android.content.SharedPreferences;
+import android.os.AsyncTask;
+import android.support.annotation.Nullable;
+
 import com.mopub.common.factories.MethodBuilderFactory;
-import com.mopub.common.util.MoPubLog;
+import com.mopub.common.logging.MoPubLog;
+import com.mopub.common.util.AsyncTasks;
+
+import java.lang.ref.WeakReference;
 
 import static com.mopub.common.util.Reflection.MethodBuilder;
 import static com.mopub.common.util.Reflection.classFound;
-import static com.mopub.mobileads.AdTypeTranslator.CustomEventType;
-import static com.mopub.mobileads.AdTypeTranslator.CustomEventType.ADMOB_BANNER;
-import static com.mopub.mobileads.AdTypeTranslator.CustomEventType.ADMOB_INTERSTITIAL;
-import static com.mopub.mobileads.AdTypeTranslator.CustomEventType.GOOGLE_PLAY_BANNER;
-import static com.mopub.mobileads.AdTypeTranslator.CustomEventType.GOOGLE_PLAY_INTERSTITIAL;
 
 public class GpsHelper {
     static public final int GOOGLE_PLAY_SUCCESS_CODE = 0;
@@ -20,26 +20,21 @@ public class GpsHelper {
     private static String sPlayServicesUtilClassName = "com.google.android.gms.common.GooglePlayServicesUtil";
     private static String sAdvertisingIdClientClassName = "com.google.android.gms.ads.identifier.AdvertisingIdClient";
 
+    public static class AdvertisingInfo {
+        public final String advertisingId;
+        public final boolean limitAdTracking;
+
+        public AdvertisingInfo(String adId, boolean limitAdTrackingEnabled) {
+            advertisingId = adId;
+            limitAdTracking = limitAdTrackingEnabled;
+        }
+    }
+
     public interface GpsHelperListener {
         public void onFetchAdInfoCompleted();
     }
 
-    static public CustomEventType convertAdMobToGooglePlayServices(final Context context, final CustomEventType customEventType) {
-        // In both cases, only check if GooglePlayServices is available if absolutely necessary
-        if (customEventType == ADMOB_BANNER &&
-                classFound(GOOGLE_PLAY_BANNER.toString()) &&
-                isGpsAvailable(context)) {
-            return GOOGLE_PLAY_BANNER;
-        } else if (customEventType == ADMOB_INTERSTITIAL &&
-                classFound(GOOGLE_PLAY_INTERSTITIAL.toString()) &&
-                isGpsAvailable(context)) {
-            return GOOGLE_PLAY_INTERSTITIAL;
-        }
-
-        return customEventType;
-    }
-
-    static boolean isGpsAvailable(final Context context) {
+    public static boolean isPlayServicesAvailable(final Context context) {
         try {
             MethodBuilder methodBuilder = MethodBuilderFactory.create(null, "isGooglePlayServicesAvailable")
                     .setStatic(Class.forName(sPlayServicesUtilClassName))
@@ -53,19 +48,9 @@ public class GpsHelper {
         }
     }
 
-    static String getAdvertisingId(final Context context) {
-        final String defaultValue = null;
-        if (isGpsAvailable(context)) {
-            return SharedPreferencesHelper.getSharedPreferences(context)
-                    .getString(ADVERTISING_ID_KEY, defaultValue);
-        } else {
-            return defaultValue;
-        }
-    }
-
     static public boolean isLimitAdTrackingEnabled(Context context) {
         final boolean defaultValue = false;
-        if (isGpsAvailable(context)) {
+        if (isPlayServicesAvailable(context)) {
             return SharedPreferencesHelper.getSharedPreferences(context)
                     .getBoolean(IS_LIMIT_AD_TRACKING_ENABLED_KEY, defaultValue);
         } else {
@@ -73,59 +58,113 @@ public class GpsHelper {
         }
     }
 
-    static boolean isSharedPreferencesPopluated(final Context context) {
-        SharedPreferences sharedPreferences = SharedPreferencesHelper.getSharedPreferences(context);
-        return sharedPreferences.contains(ADVERTISING_ID_KEY) &&
-                sharedPreferences.contains(IS_LIMIT_AD_TRACKING_ENABLED_KEY);
+    static boolean isClientMetadataPopulated(final Context context) {
+        return ClientMetadata.getInstance(context).isAdvertisingInfoSet();
     }
 
-    static public void asyncFetchAdvertisingInfoIfNotCached(final Context context, final GpsHelperListener gpsHelperListener) {
+    static public void fetchAdvertisingInfoAsync(final Context context, final GpsHelperListener gpsHelperListener) {
         // This method guarantees that the Google Play Services (GPS) advertising info will
         // be populated if GPS is available and the ad info is not already cached
         // The above will happen before the callback is run
-        if (isGpsAvailable(context) && !isSharedPreferencesPopluated(context)) {
-            asyncFetchAdvertisingInfo(context, gpsHelperListener);
+        boolean playServicesIsAvailable = isPlayServicesAvailable(context);
+        if (playServicesIsAvailable && !isClientMetadataPopulated(context)) {
+            internalFetchAdvertisingInfoAsync(context, gpsHelperListener);
         } else {
-            gpsHelperListener.onFetchAdInfoCompleted();
+            if (gpsHelperListener != null) {
+                gpsHelperListener.onFetchAdInfoCompleted();
+            }
+            if (playServicesIsAvailable) {
+                // Kick off a request to update the ad information in the background.
+                internalFetchAdvertisingInfoAsync(context, null);
+            }
         }
     }
 
-    static public void asyncFetchAdvertisingInfo(final Context context) {
-        asyncFetchAdvertisingInfo(context, null);
+    @Nullable
+    static public AdvertisingInfo fetchAdvertisingInfoSync(final Context context) {
+        if (context == null) {
+            return null;
+        }
+        Object adInfo = null;
+        try {
+            MethodBuilder methodBuilder = MethodBuilderFactory.create(null, "getAdvertisingIdInfo")
+                    .setStatic(Class.forName(sAdvertisingIdClientClassName))
+                    .addParam(Context.class, context);
+
+            adInfo = methodBuilder.execute();
+        } catch (Exception e) {
+            MoPubLog.d("Unable to obtain Google AdvertisingIdClient.Info via reflection.");
+            return null;
+        }
+
+        String advertisingId = reflectedGetAdvertisingId(adInfo, null);
+        boolean isLimitAdTrackingEnabled = reflectedIsLimitAdTrackingEnabled(adInfo, false);
+
+        return new AdvertisingInfo(advertisingId, isLimitAdTrackingEnabled);
     }
 
-    static public void asyncFetchAdvertisingInfo(final Context context, final GpsHelperListener gpsHelperListener) {
+    static private void internalFetchAdvertisingInfoAsync(final Context context, final GpsHelperListener gpsHelperListener) {
         if (!classFound(sAdvertisingIdClientClassName)) {
             if (gpsHelperListener != null) {
                 gpsHelperListener.onFetchAdInfoCompleted();
             }
+            return;
         }
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    MethodBuilder methodBuilder = MethodBuilderFactory.create(null, "getAdvertisingIdInfo")
-                            .setStatic(Class.forName(sAdvertisingIdClientClassName))
-                            .addParam(Context.class, context);
+        try {
+            AsyncTasks.safeExecuteOnExecutor(new FetchAdvertisingInfoTask(context, gpsHelperListener));
+        } catch (Exception exception) {
+            MoPubLog.d("Error executing FetchAdvertisingInfoTask", exception);
 
-                    Object adInfo = methodBuilder.execute();
-
-                    if (adInfo != null) {
-                        updateSharedPreferences(context, adInfo);
-                    }
-                } catch (Exception exception) {
-                    MoPubLog.d("Unable to obtain AdvertisingIdClient.getAdvertisingIdInfo()");
-                } finally {
-                    if (gpsHelperListener != null) {
-                        gpsHelperListener.onFetchAdInfoCompleted();
-                    }
-                }
+            if (gpsHelperListener != null) {
+                gpsHelperListener.onFetchAdInfoCompleted();
             }
-        }).start();
+        }
     }
 
-    static void updateSharedPreferences(final Context context, final Object adInfo) {
+    static private class FetchAdvertisingInfoTask extends AsyncTask<Void, Void, Void> {
+        private WeakReference<Context> mContextWeakReference;
+        private WeakReference<GpsHelperListener> mGpsHelperListenerWeakReference;
+
+        public FetchAdvertisingInfoTask(Context context, GpsHelperListener gpsHelperListener) {
+            mContextWeakReference = new WeakReference<Context>(context);
+            mGpsHelperListenerWeakReference = new WeakReference<GpsHelperListener>(gpsHelperListener);
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            try {
+                Context context = mContextWeakReference.get();
+                if (context == null) {
+                    return null;
+                }
+
+                MethodBuilder methodBuilder = MethodBuilderFactory.create(null, "getAdvertisingIdInfo")
+                        .setStatic(Class.forName(sAdvertisingIdClientClassName))
+                        .addParam(Context.class, context);
+
+                Object adInfo = methodBuilder.execute();
+
+                if (adInfo != null) {
+                    updateClientMetadata(context, adInfo);
+                }
+            } catch (Exception exception) {
+                MoPubLog.d("Unable to obtain Google AdvertisingIdClient.Info via reflection.");
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            GpsHelperListener gpsHelperListener = mGpsHelperListenerWeakReference.get();
+            if (gpsHelperListener != null) {
+                gpsHelperListener.onFetchAdInfoCompleted();
+            }
+        }
+    }
+
+    static void updateClientMetadata(final Context context, final Object adInfo) {
         String advertisingId = reflectedGetAdvertisingId(adInfo, null);
         boolean isLimitAdTrackingEnabled = reflectedIsLimitAdTrackingEnabled(adInfo, false);
 
@@ -134,11 +173,8 @@ public class GpsHelper {
          * to ensure that the state of the GPS variables are in sync.
          */
 
-        SharedPreferencesHelper.getSharedPreferences(context)
-                .edit()
-                .putString(ADVERTISING_ID_KEY, advertisingId)
-                .putBoolean(IS_LIMIT_AD_TRACKING_ENABLED_KEY, isLimitAdTrackingEnabled)
-                .commit();
+        ClientMetadata clientMetadata = ClientMetadata.getInstance(context);
+        clientMetadata.setAdvertisingInfo(advertisingId, isLimitAdTrackingEnabled);
     }
 
     static String reflectedGetAdvertisingId(final Object adInfo, final String defaultValue) {

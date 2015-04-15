@@ -1,185 +1,311 @@
 package com.mopub.nativeads;
 
 import android.content.Context;
-import android.graphics.Bitmap;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.view.View;
 
-import com.mopub.common.DownloadResponse;
-import com.mopub.common.DownloadTask;
-import com.mopub.common.GpsHelper;
-import com.mopub.common.HttpResponses;
-import com.mopub.common.util.AsyncTasks;
+import com.mopub.common.AdFormat;
+import com.mopub.common.Constants;
+import com.mopub.common.Preconditions;
+import com.mopub.common.VisibleForTesting;
+import com.mopub.common.logging.MoPubLog;
 import com.mopub.common.util.DeviceUtils;
 import com.mopub.common.util.ManifestUtils;
-import com.mopub.common.util.MoPubLog;
+import com.mopub.network.AdRequest;
+import com.mopub.network.AdResponse;
+import com.mopub.network.MoPubNetworkError;
+import com.mopub.network.Networking;
+import com.mopub.volley.NetworkResponse;
+import com.mopub.volley.RequestQueue;
+import com.mopub.volley.VolleyError;
 
-import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.json.JSONObject;
-
+import java.lang.ref.WeakReference;
 import java.util.Map;
+import java.util.TreeMap;
 
-import static com.mopub.common.GpsHelper.GpsHelperListener;
-import static com.mopub.common.GpsHelper.asyncFetchAdvertisingInfo;
-
-import static com.mopub.nativeads.MoPubNative.MoPubNativeListener.EMPTY_MOPUB_NATIVE_LISTENER;
+import static com.mopub.common.GpsHelper.fetchAdvertisingInfoAsync;
+import static com.mopub.nativeads.CustomEventNative.CustomEventNativeListener;
 import static com.mopub.nativeads.NativeErrorCode.CONNECTION_ERROR;
 import static com.mopub.nativeads.NativeErrorCode.EMPTY_AD_RESPONSE;
-import static com.mopub.nativeads.NativeErrorCode.IMAGE_DOWNLOAD_FAILURE;
 import static com.mopub.nativeads.NativeErrorCode.INVALID_JSON;
 import static com.mopub.nativeads.NativeErrorCode.INVALID_REQUEST_URL;
 import static com.mopub.nativeads.NativeErrorCode.SERVER_ERROR_RESPONSE_CODE;
-import static com.mopub.nativeads.NativeErrorCode.UNEXPECTED_RESPONSE_CODE;
 import static com.mopub.nativeads.NativeErrorCode.UNSPECIFIED;
 
-public final class MoPubNative {
-    public interface MoPubNativeListener {
+public class MoPubNative {
+
+    public interface MoPubNativeNetworkListener {
         public void onNativeLoad(final NativeResponse nativeResponse);
         public void onNativeFail(final NativeErrorCode errorCode);
-        public void onNativeImpression(final View view);
-        public void onNativeClick(final View view);
-
-        public static final MoPubNativeListener EMPTY_MOPUB_NATIVE_LISTENER = new MoPubNativeListener() {
-            @Override public void onNativeLoad(final NativeResponse nativeResponse) {}
-            @Override public void onNativeFail(final NativeErrorCode errorCode) {}
-            @Override public void onNativeImpression(final View view) {}
-            @Override public void onNativeClick(final View view) {}
-        };
     }
 
-    private NativeResponse mNativeResponse;
-    private final Context mContext;
-    private final String mAdUnitId;
-    private MoPubNativeListener mMoPubNativeListener;
-
-    public MoPubNative(final Context context, final String adUnitId, final MoPubNativeListener moPubNativeListener) {
-        ImpressionTrackingManager.start();
-
-        if (context == null) {
-            throw new IllegalArgumentException("Context may not be null.");
-        } else if (adUnitId == null) {
-            throw new IllegalArgumentException("AdUnitId may not be null.");
-        } else if (moPubNativeListener == null) {
-            throw new IllegalArgumentException("MoPubNativeListener may not be null.");
+    static final MoPubNativeNetworkListener EMPTY_NETWORK_LISTENER = new
+            MoPubNativeNetworkListener() {
+        @Override
+        public void onNativeLoad(@NonNull final NativeResponse nativeResponse) {
+            // If this listener is invoked, it means that MoPubNative instance has been destroyed
+            // so destroy any leftover incoming NativeResponses
+            nativeResponse.destroy();
         }
+        @Override
+        public void onNativeFail(final NativeErrorCode errorCode) {
+        }
+    };
+
+    static final MoPubNativeEventListener EMPTY_EVENT_LISTENER = new
+            MoPubNativeEventListener() {
+        @Override
+        public void onNativeImpression(@Nullable final View view) {
+        }
+        @Override
+        public void onNativeClick(@Nullable final View view) {
+        }
+    };
+
+    public interface MoPubNativeEventListener {
+        public void onNativeImpression(final View view);
+        public void onNativeClick(final View view);
+    }
+
+    /**
+     * @deprecated As of release 2.4, use {@link MoPubNativeEventListener} and
+     * {@link MoPubNativeNetworkListener} instead.
+     */
+    @Deprecated
+    public interface MoPubNativeListener extends MoPubNativeNetworkListener, MoPubNativeEventListener {
+    }
+
+    // must be an activity context since 3rd party networks need it
+    @NonNull private final WeakReference<Context> mContext;
+    @NonNull private final String mAdUnitId;
+    @NonNull private MoPubNativeNetworkListener mMoPubNativeNetworkListener;
+    @NonNull private MoPubNativeEventListener mMoPubNativeEventListener;
+
+    // For small sets TreeMap, takes up less memory than HashMap
+    @NonNull private Map<String, Object> mLocalExtras = new TreeMap<String, Object>();
+    @NonNull private final AdRequest.Listener mVolleyListener;
+    @Nullable private AdRequest mNativeRequest;
+
+    /**
+     * @deprecated As of release 2.4, use {@link MoPubNative(Context, String,
+     * MoPubNativeNetworkListener)} and {@link #setNativeEventListener(MoPubNativeEventListener)}
+     * instead.
+     */
+    @Deprecated
+    public MoPubNative(@NonNull final Context context,
+            @NonNull final String adUnitId,
+            @NonNull final MoPubNativeListener moPubNativeListener) {
+        this(context, adUnitId, (MoPubNativeNetworkListener) moPubNativeListener);
+        setNativeEventListener(moPubNativeListener);
+    }
+
+    public MoPubNative(@NonNull final Context context,
+                @NonNull final String adUnitId,
+                @NonNull final MoPubNativeNetworkListener moPubNativeNetworkListener) {
+        Preconditions.checkNotNull(context, "Context may not be null.");
+        Preconditions.checkNotNull(adUnitId, "AdUnitId may not be null.");
+        Preconditions.checkNotNull(moPubNativeNetworkListener, "MoPubNativeNetworkListener may not be null.");
 
         ManifestUtils.checkNativeActivitiesDeclared(context);
 
-        mContext = context.getApplicationContext();
+        mContext = new WeakReference<Context>(context);
         mAdUnitId = adUnitId;
-        mMoPubNativeListener = moPubNativeListener;
-        
+        mMoPubNativeNetworkListener = moPubNativeNetworkListener;
+        mMoPubNativeEventListener = EMPTY_EVENT_LISTENER;
+        mVolleyListener = new AdRequest.Listener() {
+            @Override
+            public void onSuccess(@NonNull final AdResponse response) {
+                onAdLoad(response);
+            }
+
+            @Override
+            public void onErrorResponse(@NonNull final VolleyError volleyError) {
+                onAdError(volleyError);
+            }
+        };
+
         // warm up cache for google play services info
-        asyncFetchAdvertisingInfo(mContext);
+        fetchAdvertisingInfoAsync(context, null);
+    }
+
+    public void setNativeEventListener(@Nullable final MoPubNativeEventListener nativeEventListener) {
+        mMoPubNativeEventListener = (nativeEventListener == null)
+                ? EMPTY_EVENT_LISTENER : nativeEventListener;
+    }
+
+    public void destroy() {
+        mContext.clear();
+        if (mNativeRequest != null) {
+            mNativeRequest.cancel();
+            mNativeRequest = null;
+        }
+        mMoPubNativeNetworkListener = EMPTY_NETWORK_LISTENER;
+        mMoPubNativeEventListener = EMPTY_EVENT_LISTENER;
+    }
+
+    public void setLocalExtras(@Nullable final Map<String, Object> localExtras) {
+        if (localExtras == null) {
+            mLocalExtras = new TreeMap<String, Object>();
+        } else {
+            mLocalExtras = new TreeMap<String, Object>(localExtras);
+        }
     }
 
     public void makeRequest() {
-        makeRequest(null);
+        makeRequest((RequestParameters)null);
     }
 
-    public void makeRequest(final RequestParameters requestParameters) {
-        makeRequest(requestParameters, new NativeGpsHelperListener(requestParameters));
+    public void makeRequest(@Nullable final RequestParameters requestParameters) {
+        makeRequest(requestParameters, null);
     }
 
-    void makeRequest(final RequestParameters requestParameters,
-            NativeGpsHelperListener nativeGpsHelperListener) {
-        if (!DeviceUtils.isNetworkAvailable(mContext)) {
-            mMoPubNativeListener.onNativeFail(CONNECTION_ERROR);
+    public void makeRequest(@Nullable final RequestParameters requestParameters,
+            @Nullable Integer sequenceNumber) {
+        final Context context = getContextOrDestroy();
+        if (context == null) {
             return;
         }
 
-        // If we have access to Google Play Services (GPS) but the advertising info
-        // is not cached then guarantee we get it before building the ad request url
-        // in the callback, this is a requirement from Google
-        GpsHelper.asyncFetchAdvertisingInfoIfNotCached(
-                mContext,
-                nativeGpsHelperListener
-        );
-    }
-    public void destroy() {
-        mMoPubNativeListener = EMPTY_MOPUB_NATIVE_LISTENER;
+        if (!DeviceUtils.isNetworkAvailable(context)) {
+            mMoPubNativeNetworkListener.onNativeFail(CONNECTION_ERROR);
+            return;
+        }
+
+        loadNativeAd(requestParameters, sequenceNumber);
     }
 
-    private void loadNativeAd(final RequestParameters requestParameters) {
-        String endpointUrl = new NativeUrlGenerator(mContext)
+    private void loadNativeAd(
+            @Nullable final RequestParameters requestParameters,
+            @Nullable final Integer sequenceNumber) {
+        final Context context = getContextOrDestroy();
+        if (context == null) {
+            return;
+        }
+
+        final NativeUrlGenerator generator = new NativeUrlGenerator(context)
                 .withAdUnitId(mAdUnitId)
-                .withRequest(requestParameters)
-                .generateUrlString(Constants.NATIVE_HOST);
+                .withRequest(requestParameters);
+
+        if (sequenceNumber != null) {
+            generator.withSequenceNumber(sequenceNumber);
+        }
+
+        final String endpointUrl = generator.generateUrlString(Constants.HOST);
 
         if (endpointUrl != null) {
             MoPubLog.d("Loading ad from: " + endpointUrl);
         }
 
-        final HttpGet httpGet;
-        try {
-            httpGet = new HttpGet(endpointUrl);
-        } catch (IllegalArgumentException e) {
-            mMoPubNativeListener.onNativeFail(INVALID_REQUEST_URL);
+        requestNativeAd(endpointUrl);
+    }
+
+    void requestNativeAd(@Nullable final String endpointUrl) {
+        final Context context = getContextOrDestroy();
+        if (context == null) {
             return;
         }
 
-        downloadJson(httpGet);
+        if (endpointUrl == null) {
+            mMoPubNativeNetworkListener.onNativeFail(INVALID_REQUEST_URL);
+            return;
+        }
+
+        mNativeRequest = new AdRequest(endpointUrl, AdFormat.NATIVE, mAdUnitId, mVolleyListener);
+        RequestQueue requestQueue = Networking.getRequestQueue(context);
+        requestQueue.add(mNativeRequest);
     }
 
-    private void downloadJson(final HttpUriRequest httpUriRequest) {
-        final DownloadTask jsonDownloadTask = new DownloadTask(new DownloadTask.DownloadTaskListener() {
-            @Override
-            public void onComplete(final String url, final DownloadResponse downloadResponse) {
-                if (downloadResponse == null) {
-                    mMoPubNativeListener.onNativeFail(UNSPECIFIED);
-                } else if (downloadResponse.getStatusCode() >= 500 &&
-                        downloadResponse.getStatusCode() < 600) {
-                    mMoPubNativeListener.onNativeFail(SERVER_ERROR_RESPONSE_CODE);
-                } else if (downloadResponse.getStatusCode() != HttpStatus.SC_OK) {
-                    mMoPubNativeListener.onNativeFail(UNEXPECTED_RESPONSE_CODE);
-                } else if (downloadResponse.getContentLength() == 0) {
-                    mMoPubNativeListener.onNativeFail(EMPTY_AD_RESPONSE);
-                } else {
-
-                    final JSONObject jsonObject = HttpResponses.asJsonObject(downloadResponse);
-
-                    if (jsonObject == null) {
-                        mMoPubNativeListener.onNativeFail(INVALID_JSON);
-                    } else {
-                        try {
-                            mNativeResponse = new NativeResponse(jsonObject);
-                        } catch (IllegalArgumentException e) {
-                            mMoPubNativeListener.onNativeFail(INVALID_JSON);
+    private void onAdLoad(@NonNull final AdResponse response) {
+        final Context context = getContextOrDestroy();
+        if (context == null) {
+            return;
+        }
+        final CustomEventNativeListener customEventNativeListener =
+                new CustomEventNativeListener() {
+                    @Override
+                    public void onNativeAdLoaded(@NonNull final NativeAdInterface nativeAd) {
+                        final Context context = getContextOrDestroy();
+                        if (context == null) {
                             return;
                         }
-                        downloadImages();
+                        mMoPubNativeNetworkListener.onNativeLoad(new NativeResponse(context,
+                                response.getImpressionTrackingUrl(),
+                                response.getClickTrackingUrl(),
+                                mAdUnitId,
+                                nativeAd,
+                                mMoPubNativeEventListener));
                     }
-                }
-            }
-        });
 
-        AsyncTasks.safeExecuteOnExecutor(jsonDownloadTask, httpUriRequest);
+                    @Override
+                    public void onNativeAdFailed(final NativeErrorCode errorCode) {
+                        requestNativeAd(response.getFailoverUrl());
+                    }
+                };
+
+
+
+        CustomEventNativeAdapter.loadNativeAd(
+                context,
+                mLocalExtras,
+                response,
+                customEventNativeListener
+        );
     }
 
-    private void downloadImages() {
-        ImageService.get(mContext, mNativeResponse.getAllImageUrls(), new ImageService.ImageServiceListener() {
-            @Override
-            public void onSuccess(Map<String, Bitmap> bitmaps) {
-                mMoPubNativeListener.onNativeLoad(mNativeResponse);
+    @VisibleForTesting
+    void onAdError(@NonNull final VolleyError volleyError) {
+        MoPubLog.d("Native ad request failed.", volleyError);
+        if (volleyError instanceof MoPubNetworkError) {
+            MoPubNetworkError error = (MoPubNetworkError) volleyError;
+            switch (error.getReason()) {
+                case BAD_BODY:
+                    mMoPubNativeNetworkListener.onNativeFail(INVALID_JSON);
+                    return;
+                case BAD_HEADER_DATA:
+                    mMoPubNativeNetworkListener.onNativeFail(INVALID_JSON);
+                    return;
+                case WARMING_UP:
+                case NO_FILL:
+                    mMoPubNativeNetworkListener.onNativeFail(EMPTY_AD_RESPONSE);
+                    return;
+                case UNSPECIFIED:
+                default:
+                    mMoPubNativeNetworkListener.onNativeFail(UNSPECIFIED);
+                    return;
             }
-
-            @Override
-            public void onFail() {
-                mMoPubNativeListener.onNativeFail(IMAGE_DOWNLOAD_FAILURE);
+        } else {
+            // Process our other status code errors.
+            NetworkResponse response = volleyError.networkResponse;
+            if (response != null && response.statusCode >= 500 && response.statusCode < 600) {
+                mMoPubNativeNetworkListener.onNativeFail(SERVER_ERROR_RESPONSE_CODE);
+            } else {
+                mMoPubNativeNetworkListener.onNativeFail(UNSPECIFIED);
             }
-        });
+        }
     }
 
-    // Do not store this class as a member of MoPubNative; will result in circular reference
-    class NativeGpsHelperListener implements GpsHelperListener {
-        private RequestParameters mRequestParameters;
-        NativeGpsHelperListener(RequestParameters requestParameters) {
-            mRequestParameters = requestParameters;
+    Context getContextOrDestroy() {
+        final Context context = mContext.get();
+        if (context == null) {
+            destroy();
+            MoPubLog.d("Weak reference to Activity Context in MoPubNative became null. This instance" +
+                    " of MoPubNative is destroyed and No more requests will be processed.");
         }
-        @Override
-        public void onFetchAdInfoCompleted() {
-            loadNativeAd(mRequestParameters);
-        }
+        return context;
+    }
+
+    @NonNull
+    @VisibleForTesting
+    @Deprecated
+    MoPubNativeNetworkListener getMoPubNativeNetworkListener() {
+        return mMoPubNativeNetworkListener;
+    }
+
+    @NonNull
+    @VisibleForTesting
+    @Deprecated
+    MoPubNativeEventListener getMoPubNativeEventListener() {
+        return mMoPubNativeEventListener;
     }
 }

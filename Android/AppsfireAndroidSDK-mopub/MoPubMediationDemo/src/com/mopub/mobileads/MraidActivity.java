@@ -1,170 +1,162 @@
-/*
- * Copyright (c) 2010-2013, MoPub Inc.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *  Redistributions of source code must retain the above copyright
- *   notice, this list of conditions and the following disclaimer.
- *
- *  Redistributions in binary form must reproduce the above copyright
- *   notice, this list of conditions and the following disclaimer in the
- *   documentation and/or other materials provided with the distribution.
- *
- *  Neither the name of 'MoPub Inc.' nor the names of its contributors
- *   may be used to endorse or promote products derived from this software
- *   without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
- * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 package com.mopub.mobileads;
 
-import android.annotation.TargetApi;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build.VERSION;
+import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import com.mopub.mobileads.MraidView.ExpansionStyle;
-import com.mopub.mobileads.MraidView.NativeCloseButtonStyle;
-import com.mopub.mobileads.MraidView.PlacementType;
-import com.mopub.mobileads.MraidView.ViewState;
-import com.mopub.mobileads.factories.MraidViewFactory;
-import com.mopub.mobileads.util.WebViews;
 
-import static com.mopub.mobileads.AdFetcher.AD_CONFIGURATION_KEY;
-import static com.mopub.mobileads.AdFetcher.HTML_RESPONSE_BODY_KEY;
+import com.mopub.common.AdReport;
+import com.mopub.common.VisibleForTesting;
+import com.mopub.common.logging.MoPubLog;
+import com.mopub.mobileads.CustomEventInterstitial.CustomEventInterstitialListener;
+import com.mopub.mraid.MraidController;
+import com.mopub.mraid.MraidController.MraidListener;
+import com.mopub.mraid.MraidController.UseCustomCloseListener;
+import com.mopub.mraid.MraidWebViewDebugListener;
+import com.mopub.mraid.PlacementType;
+
+import static com.mopub.common.DataKeys.AD_REPORT_KEY;
+import static com.mopub.common.DataKeys.BROADCAST_IDENTIFIER_KEY;
+import static com.mopub.common.DataKeys.HTML_RESPONSE_BODY_KEY;
 import static com.mopub.mobileads.BaseInterstitialActivity.JavaScriptWebViewCallbacks.WEB_VIEW_DID_APPEAR;
 import static com.mopub.mobileads.BaseInterstitialActivity.JavaScriptWebViewCallbacks.WEB_VIEW_DID_CLOSE;
-import static com.mopub.common.util.VersionCode.ICE_CREAM_SANDWICH;
-import static com.mopub.common.util.VersionCode.currentApiLevel;
 import static com.mopub.mobileads.EventForwardingBroadcastReceiver.ACTION_INTERSTITIAL_CLICK;
 import static com.mopub.mobileads.EventForwardingBroadcastReceiver.ACTION_INTERSTITIAL_DISMISS;
+import static com.mopub.mobileads.EventForwardingBroadcastReceiver.ACTION_INTERSTITIAL_FAIL;
 import static com.mopub.mobileads.EventForwardingBroadcastReceiver.ACTION_INTERSTITIAL_SHOW;
 import static com.mopub.mobileads.EventForwardingBroadcastReceiver.broadcastAction;
 
 public class MraidActivity extends BaseInterstitialActivity {
-    private MraidView mMraidView;
+    @Nullable private MraidController mMraidController;
+    @Nullable private MraidWebViewDebugListener mDebugListener;
 
-    static void preRenderHtml(final Context context, final CustomEventInterstitial.CustomEventInterstitialListener customEventInterstitialListener, final String htmlData) {
-        MraidView dummyMraidView = MraidViewFactory.create(context, null, ExpansionStyle.DISABLED, NativeCloseButtonStyle.ALWAYS_VISIBLE, PlacementType.INTERSTITIAL);
+    public static void preRenderHtml(@NonNull final Context context,
+            @NonNull final CustomEventInterstitialListener customEventInterstitialListener,
+            @NonNull final String htmlData) {
+        BaseWebView dummyWebView = new BaseWebView(context);
 
-        dummyMraidView.enablePlugins(false);
-        dummyMraidView.setMraidListener(new MraidView.MraidListener() {
+        dummyWebView.enablePlugins(false);
+        dummyWebView.setWebViewClient(new WebViewClient() {
             @Override
-            public void onReady(MraidView view) {
+            public void onPageFinished(final WebView view, final String url) {
                 customEventInterstitialListener.onInterstitialLoaded();
             }
 
-            @Override
-            public void onFailure(MraidView view) {
-                customEventInterstitialListener.onInterstitialFailed(null);
-            }
-
-            @Override
-            public void onExpand(MraidView view) {
-            }
-
-            @Override
-            public void onOpen(MraidView view) {
-            }
-
-            @Override
-            public void onClose(MraidView view, MraidView.ViewState newViewState) {
-            }
-        });
-        dummyMraidView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 return true;
             }
 
             @Override
-            public void onPageFinished(WebView view, String url) {
-                customEventInterstitialListener.onInterstitialLoaded();
+            public void onReceivedError(final WebView view, final int errorCode,
+                    final String description,
+                    final String failingUrl) {
+                super.onReceivedError(view, errorCode, description, failingUrl);
+                customEventInterstitialListener.onInterstitialFailed(
+                        MoPubErrorCode.MRAID_LOAD_ERROR);
             }
         });
-        dummyMraidView.loadHtmlData(htmlData);
+
+        dummyWebView.loadDataWithBaseURL(null, htmlData, "text/html", "UTF-8", null);
     }
 
-    public static void start(Context context, String htmlData, AdConfiguration adConfiguration) {
-        Intent intent = createIntent(context, htmlData, adConfiguration);
+    public static void start(@NonNull Context context, @Nullable AdReport adreport, @NonNull String htmlData, long broadcastIdentifier) {
+        Intent intent = createIntent(context, adreport, htmlData, broadcastIdentifier);
         try {
             context.startActivity(intent);
-        } catch (ActivityNotFoundException anfe) {
+        } catch (ActivityNotFoundException exception) {
             Log.d("MraidInterstitial", "MraidActivity.class not found. Did you declare MraidActivity in your manifest?");
         }
     }
 
-    private static Intent createIntent(Context context, String htmlData, AdConfiguration adConfiguration) {
+    @VisibleForTesting
+    protected static Intent createIntent(@NonNull Context context, @Nullable AdReport adReport,
+            @NonNull String htmlData, long broadcastIdentifier) {
         Intent intent = new Intent(context, MraidActivity.class);
         intent.putExtra(HTML_RESPONSE_BODY_KEY, htmlData);
-        intent.putExtra(AD_CONFIGURATION_KEY, adConfiguration);
+        intent.putExtra(BROADCAST_IDENTIFIER_KEY, broadcastIdentifier);
+        intent.putExtra(AD_REPORT_KEY, adReport);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         return intent;
     }
 
     @Override
     public View getAdView() {
-        mMraidView = MraidViewFactory.create(this, getAdConfiguration(), ExpansionStyle.DISABLED, NativeCloseButtonStyle.AD_CONTROLLED, PlacementType.INTERSTITIAL);
+        String htmlData = getIntent().getStringExtra(HTML_RESPONSE_BODY_KEY);
+        if (htmlData == null) {
+            MoPubLog.w("MraidActivity received a null HTML body. Finishing the activity.");
+            finish();
+            return new View(this);
+        }
 
-        mMraidView.setMraidListener(new MraidView.BaseMraidListener(){
-            public void onReady(MraidView view) {
-                mMraidView.loadUrl(WEB_VIEW_DID_APPEAR.getUrl());
-                showInterstitialCloseButton();
+        mMraidController = new MraidController(
+                this, mAdReport, PlacementType.INTERSTITIAL);
+
+        mMraidController.setDebugListener(mDebugListener);
+        mMraidController.setMraidListener(new MraidListener() {
+            @Override
+            public void onLoaded(View view) {
+                // This is only done for the interstitial. Banners have a different mechanism
+                // for tracking third party impressions.
+                mMraidController.loadJavascript(WEB_VIEW_DID_APPEAR.getJavascript());
             }
 
             @Override
-            public void onOpen(MraidView view) {
-                broadcastAction(MraidActivity.this, getBroadcastIdentifier(), ACTION_INTERSTITIAL_CLICK);
+            public void onFailedToLoad() {
+                MoPubLog.d("MraidActivity failed to load. Finishing the activity");
+                broadcastAction(MraidActivity.this, getBroadcastIdentifier(),
+                        ACTION_INTERSTITIAL_FAIL);
+                finish();
             }
 
-            public void onClose(MraidView view, ViewState newViewState) {
-                mMraidView.loadUrl(WEB_VIEW_DID_CLOSE.getUrl());
+            public void onClose() {
+                mMraidController.loadJavascript(WEB_VIEW_DID_CLOSE.getJavascript());
                 finish();
+            }
+
+            @Override
+            public void onExpand() {
+                // No-op. The interstitial is always expanded.
+            }
+
+            @Override
+            public void onOpen() {
+                broadcastAction(MraidActivity.this, getBroadcastIdentifier(),
+                        ACTION_INTERSTITIAL_CLICK);
             }
         });
 
-        mMraidView.setOnCloseButtonStateChange(new MraidView.OnCloseButtonStateChangeListener() {
-            public void onCloseButtonStateChange(MraidView view, boolean enabled) {
-                if (enabled) {
-                    showInterstitialCloseButton();
-                } else {
+        // Needed because the Activity provides the close button, not the controller. This
+        // gets called if the creative calls mraid.useCustomClose.
+        mMraidController.setUseCustomCloseListener(new UseCustomCloseListener() {
+            public void useCustomCloseChanged(boolean useCustomClose) {
+                if (useCustomClose) {
                     hideInterstitialCloseButton();
+                } else {
+                    showInterstitialCloseButton();
                 }
             }
         });
 
-        String source = getIntent().getStringExtra(HTML_RESPONSE_BODY_KEY);
-        mMraidView.loadHtmlData(source);
-
-        return mMraidView;
+        mMraidController.loadContent(htmlData);
+        return mMraidController.getAdContainer();
     }
 
-    @TargetApi(11)
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         broadcastAction(this, getBroadcastIdentifier(), ACTION_INTERSTITIAL_SHOW);
 
-        if (currentApiLevel().isAtLeast(ICE_CREAM_SANDWICH)) {
+        if (VERSION.SDK_INT >= VERSION_CODES.ICE_CREAM_SANDWICH) {
             getWindow().setFlags(
                     WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
                     WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
@@ -173,20 +165,35 @@ public class MraidActivity extends BaseInterstitialActivity {
 
     @Override
     protected void onPause() {
+        if (mMraidController != null) {
+            mMraidController.pause(isFinishing());
+        }
         super.onPause();
-        WebViews.onPause(mMraidView);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        WebViews.onResume(mMraidView);
+        if (mMraidController != null) {
+            mMraidController.resume();
+        }
     }
 
     @Override
     protected void onDestroy() {
-        mMraidView.destroy();
+        if (mMraidController != null) {
+            mMraidController.destroy();
+        }
+
         broadcastAction(this, getBroadcastIdentifier(), ACTION_INTERSTITIAL_DISMISS);
         super.onDestroy();
+    }
+
+    @VisibleForTesting
+    public void setDebugListener(@Nullable MraidWebViewDebugListener debugListener) {
+        mDebugListener = debugListener;
+        if (mMraidController != null) {
+            mMraidController.setDebugListener(debugListener);
+        }
     }
 }

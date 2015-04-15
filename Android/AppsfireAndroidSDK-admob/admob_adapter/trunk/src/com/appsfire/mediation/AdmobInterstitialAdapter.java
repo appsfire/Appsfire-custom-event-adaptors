@@ -117,6 +117,12 @@ public class AdmobInterstitialAdapter implements CustomEventInterstitial,  AFAdS
 		// One or more in-stream (sashimi) ads are available
 		Log.i (CLASS_TAG, "onInStreamAdAvailable");
 	}
+
+	@Override
+	public void onNativeAdAvailable() {
+		// One or more native ads are available
+		Log.i (CLASS_TAG, "onNativeAdAvailable");
+	}
 		
 	@Override
 	public void onModalAdPreDisplay() {

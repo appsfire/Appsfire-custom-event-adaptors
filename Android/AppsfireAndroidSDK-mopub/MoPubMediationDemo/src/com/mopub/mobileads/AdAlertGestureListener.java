@@ -1,45 +1,17 @@
-/*
- * Copyright (c) 2010-2013, MoPub Inc.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *  Redistributions of source code must retain the above copyright
- *   notice, this list of conditions and the following disclaimer.
- *
- *  Redistributions in binary form must reproduce the above copyright
- *   notice, this list of conditions and the following disclaimer in the
- *   documentation and/or other materials provided with the distribution.
- *
- *  Neither the name of 'MoPub Inc.' nor the names of its contributors
- *   may be used to endorse or promote products derived from this software
- *   without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
- * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 package com.mopub.mobileads;
 
+import android.support.annotation.Nullable;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 
+import com.mopub.common.AdReport;
+
 public class AdAlertGestureListener extends GestureDetector.SimpleOnGestureListener{
     private static final int MINIMUM_NUMBER_OF_ZIGZAGS_TO_FLAG = 4;
     private static final float MAXIMUM_THRESHOLD_X_IN_DIPS = 100;
-    private static final float MAXIMUM_THRESHOLD_Y_IN_DIPS = 50;
+    private static final float MAXIMUM_THRESHOLD_Y_IN_DIPS = 100;
+    @Nullable private final AdReport mAdReport;
 
     private float mCurrentThresholdInDips = MAXIMUM_THRESHOLD_X_IN_DIPS;
     private float mPreviousPositionX;
@@ -53,15 +25,14 @@ public class AdAlertGestureListener extends GestureDetector.SimpleOnGestureListe
     private ZigZagState mCurrentZigZagState = ZigZagState.UNSET;
 
     private View mView;
-    private AdConfiguration mAdConfiguration;
 
-    AdAlertGestureListener(View view, AdConfiguration adConfiguration) {
+    AdAlertGestureListener(View view, @Nullable AdReport adReport) {
         super();
         if (view != null && view.getWidth() > 0) {
             mCurrentThresholdInDips = Math.min(MAXIMUM_THRESHOLD_X_IN_DIPS, view.getWidth() / 3f);
         }
         mView = view;
-        mAdConfiguration = adConfiguration;
+        mAdReport = adReport;
     }
 
     @Override
@@ -101,7 +72,7 @@ public class AdAlertGestureListener extends GestureDetector.SimpleOnGestureListe
 
     void finishGestureDetection() {
         if (mCurrentZigZagState == mCurrentZigZagState.FINISHED) {
-            mAdAlertReporter = new AdAlertReporter(mView.getContext(), mView, mAdConfiguration);
+            mAdAlertReporter = new AdAlertReporter(mView.getContext(), mView, mAdReport);
             mAdAlertReporter.send();
         }
         reset();

@@ -1,35 +1,3 @@
-/*
- * Copyright (c) 2010-2013, MoPub Inc.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *  Redistributions of source code must retain the above copyright
- *   notice, this list of conditions and the following disclaimer.
- *
- *  Redistributions in binary form must reproduce the above copyright
- *   notice, this list of conditions and the following disclaimer in the
- *   documentation and/or other materials provided with the distribution.
- *
- *  Neither the name of 'MoPub Inc.' nor the names of its contributors
- *   may be used to endorse or promote products derived from this software
- *   without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
- * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 package com.mopub.mobileads;
 
 import android.app.Activity;
@@ -43,35 +11,45 @@ import android.graphics.drawable.LayerDrawable;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.VideoView;
+
 import com.mopub.common.DownloadResponse;
 import com.mopub.common.DownloadTask;
 import com.mopub.common.HttpResponses;
 import com.mopub.common.MoPubBrowser;
+import com.mopub.common.VisibleForTesting;
+import com.mopub.common.event.MoPubEvents;
+import com.mopub.common.logging.MoPubLog;
 import com.mopub.common.util.AsyncTasks;
 import com.mopub.common.util.Dips;
 import com.mopub.common.util.Drawables;
+import com.mopub.common.util.Intents;
 import com.mopub.common.util.Streams;
 import com.mopub.common.util.VersionCode;
-import com.mopub.mobileads.util.HttpUtils;
+import com.mopub.exceptions.IntentNotResolvableException;
+import com.mopub.exceptions.UrlParseException;
 import com.mopub.mobileads.util.vast.VastCompanionAd;
 import com.mopub.mobileads.util.vast.VastVideoConfiguration;
+
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
 
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.Serializable;
+import java.util.List;
 
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+import static com.mopub.common.HttpClient.initializeHttpGet;
+import static com.mopub.mobileads.EventForwardingBroadcastReceiver.ACTION_INTERSTITIAL_CLICK;
 import static com.mopub.mobileads.EventForwardingBroadcastReceiver.ACTION_INTERSTITIAL_DISMISS;
 import static com.mopub.mobileads.EventForwardingBroadcastReceiver.ACTION_INTERSTITIAL_SHOW;
+import static com.mopub.network.TrackingRequest.makeTrackingHttpRequest;
 
 public class VastVideoViewController extends BaseVideoViewController implements DownloadTask.DownloadTaskListener {
     static final String VAST_VIDEO_CONFIGURATION = "vast_video_configuration";
@@ -84,9 +62,9 @@ public class VastVideoViewController extends BaseVideoViewController implements 
     private static final int MAX_VIDEO_RETRIES = 1;
     private static final int VIDEO_VIEW_FILE_PERMISSION_ERROR = Integer.MIN_VALUE;
 
-    private static final ThreadPoolExecutor sThreadPoolExecutor = new ThreadPoolExecutor(10, 50, 1, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
     static final int DEFAULT_VIDEO_DURATION_FOR_CLOSE_BUTTON = 5 * 1000;
     static final int MAX_VIDEO_DURATION_FOR_CLOSE_BUTTON = 16 * 1000;
+    static final int START_MARK_THRESHOLD = 2000;
 
     private final VastVideoConfiguration mVastVideoConfiguration;
     private final VastCompanionAd mVastCompanionAd;
@@ -105,9 +83,18 @@ public class VastVideoViewController extends BaseVideoViewController implements 
     private boolean mIsFirstMarkHit;
     private boolean mIsSecondMarkHit;
     private boolean mIsThirdMarkHit;
+    // This flag indicates that the final video checkpoint has been reached, therefore allowing
+    // us to fire the video completion tracker in MediaPlayer#onCompletion.
+    // This is a safeguard against inconsistent MediaPlayer#onCompletion callbacks due to differing
+    // implementations across Android versions and devices.
+    private boolean mIsFinalMarkHit;
+
     private int mSeekerPositionOnPause;
     private boolean mIsVideoFinishedPlaying;
     private int mVideoRetries;
+
+    private boolean mVideoError;
+    private boolean mCompletionTrackerFired;
 
     VastVideoViewController(final Context context,
             final Bundle bundle,
@@ -155,29 +142,30 @@ public class VastVideoViewController extends BaseVideoViewController implements 
         getLayout().addView(mVastVideoToolbar);
 
         mCompanionAdImageView = createCompanionAdImageView(context);
-
-        pingOnBackgroundThread(mVastVideoConfiguration.getImpressionTrackers());
-
         mVideoProgressCheckerRunnable = createVideoProgressCheckerRunnable();
     }
 
     @Override
-    VideoView getVideoView() {
+    protected VideoView getVideoView() {
         return mVideoView;
     }
 
     @Override
-    void onCreate() {
+    protected void onCreate() {
         super.onCreate();
         getBaseVideoViewControllerListener().onSetRequestedOrientation(SCREEN_ORIENTATION_LANDSCAPE);
-
-        broadcastAction(ACTION_INTERSTITIAL_SHOW);
-
         downloadCompanionAd();
+
+        makeTrackingHttpRequest(
+                mVastVideoConfiguration.getImpressionTrackers(),
+                getContext(),
+                MoPubEvents.Type.IMPRESSION_REQUEST
+        );
+        broadcastAction(ACTION_INTERSTITIAL_SHOW);
     }
 
     @Override
-    void onResume() {
+    protected void onResume() {
         // When resuming, VideoView needs to reinitialize its MediaPlayer with the video path
         // and therefore reset the count to zero, to let it retry on error
         mVideoRetries = 0;
@@ -190,21 +178,21 @@ public class VastVideoViewController extends BaseVideoViewController implements 
     }
 
     @Override
-    void onPause() {
+    protected void onPause() {
         stopProgressChecker();
         mSeekerPositionOnPause = mVideoView.getCurrentPosition();
         mVideoView.pause();
     }
 
     @Override
-    void onDestroy() {
+    protected void onDestroy() {
         stopProgressChecker();
         broadcastAction(ACTION_INTERSTITIAL_DISMISS);
     }
 
     // Enable the device's back button when the video close button has been displayed
     @Override
-    boolean backButtonEnabled() {
+    public boolean backButtonEnabled() {
         return mShowCloseButtonEventFired;
     }
 
@@ -249,16 +237,18 @@ public class VastVideoViewController extends BaseVideoViewController implements 
     private void downloadCompanionAd() {
         if (mVastCompanionAd != null) {
             try {
-                final HttpGet httpGet = new HttpGet(mVastCompanionAd.getImageUrl());
-                DownloadTask downloadTask = new DownloadTask(this);
+                final HttpGet httpGet = initializeHttpGet(mVastCompanionAd.getImageUrl(), getContext());
+                final DownloadTask downloadTask = new DownloadTask(this);
                 AsyncTasks.safeExecuteOnExecutor(downloadTask, httpGet);
-            } catch (IllegalArgumentException e) {
-                // malformed url, don't download optional companion ad
+            } catch (Exception e) {
+                MoPubLog.d("Failed to download companion ad", e);
             }
         }
     }
 
     private Runnable createVideoProgressCheckerRunnable() {
+        // This Runnable must only be run from the main thread due to accessing
+        // class instance variables
         return new Runnable() {
             @Override
             public void run() {
@@ -268,24 +258,25 @@ public class VastVideoViewController extends BaseVideoViewController implements 
                 if (videoLength > 0) {
                     float progressPercentage = currentPosition / videoLength;
 
-                    if (!mIsStartMarkHit && currentPosition >= 1000) {
+                    if (!mIsStartMarkHit && currentPosition >= START_MARK_THRESHOLD) {
                         mIsStartMarkHit = true;
-                        pingOnBackgroundThread(mVastVideoConfiguration.getStartTrackers());
+                        makeTrackingHttpRequest(mVastVideoConfiguration.getStartTrackers(), getContext());
                     }
 
                     if (!mIsFirstMarkHit && progressPercentage > FIRST_QUARTER_MARKER) {
                         mIsFirstMarkHit = true;
-                        pingOnBackgroundThread(mVastVideoConfiguration.getFirstQuartileTrackers());
+                        makeTrackingHttpRequest(mVastVideoConfiguration.getFirstQuartileTrackers(), getContext());
                     }
 
                     if (!mIsSecondMarkHit && progressPercentage > MID_POINT_MARKER) {
                         mIsSecondMarkHit = true;
-                        pingOnBackgroundThread(mVastVideoConfiguration.getMidpointTrackers());
+                        makeTrackingHttpRequest(mVastVideoConfiguration.getMidpointTrackers(), getContext());
                     }
 
                     if (!mIsThirdMarkHit && progressPercentage > THIRD_QUARTER_MARKER) {
                         mIsThirdMarkHit = true;
-                        pingOnBackgroundThread(mVastVideoConfiguration.getThirdQuartileTrackers());
+                        mIsFinalMarkHit = true;
+                        makeTrackingHttpRequest(mVastVideoConfiguration.getThirdQuartileTrackers(), getContext());
                     }
 
                     if (isLongVideo(mVideoView.getDuration()) ) {
@@ -312,7 +303,7 @@ public class VastVideoViewController extends BaseVideoViewController implements 
                 new int[] {Color.argb(0,0,0,0), Color.argb(255,0,0,0)}
         );
         Drawable[] layers = new Drawable[2];
-        layers[0] = Drawables.THATCHED_BACKGROUND.decodeImage(context);
+        layers[0] = Drawables.THATCHED_BACKGROUND.createDrawable(context);
         layers[1] = gradientDrawable;
         LayerDrawable layerList = new LayerDrawable(layers);
         getLayout().setBackgroundDrawable(layerList);
@@ -338,6 +329,7 @@ public class VastVideoViewController extends BaseVideoViewController implements 
         videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mp) {
+                // Called when media source is ready for playback
                 if (mVideoView.getDuration() < MAX_VIDEO_DURATION_FOR_CLOSE_BUTTON) {
                     mShowCloseButtonDelay = mVideoView.getDuration();
                 }
@@ -352,9 +344,12 @@ public class VastVideoViewController extends BaseVideoViewController implements 
                 makeVideoInteractable();
 
                 videoCompleted(false);
-
-                pingOnBackgroundThread(mVastVideoConfiguration.getCompleteTrackers());
                 mIsVideoFinishedPlaying = true;
+
+                if (!mVideoError && mIsFinalMarkHit && !mCompletionTrackerFired) {
+                    makeTrackingHttpRequest(mVastVideoConfiguration.getCompleteTrackers(), context);
+                    mCompletionTrackerFired = true;
+                }
 
                 videoView.setVisibility(View.GONE);
                 // check the drawable to see if the image view was populated with content
@@ -373,6 +368,7 @@ public class VastVideoViewController extends BaseVideoViewController implements 
                     stopProgressChecker();
                     makeVideoInteractable();
                     videoError(false);
+                    mVideoError = true;
                     return false;
                 }
             }
@@ -420,6 +416,42 @@ public class VastVideoViewController extends BaseVideoViewController implements 
         return false;
     }
 
+    /**
+     * Called upon user click. Attempts open mopubnativebrowser links in the device browser and all
+     * other links in the MoPub in-app browser.
+     */
+    @VisibleForTesting
+    void handleClick(final List<String> clickThroughTrackers, final String clickThroughUrl) {
+        makeTrackingHttpRequest(clickThroughTrackers, getContext(), MoPubEvents.Type.CLICK_REQUEST);
+
+        if (clickThroughUrl == null) {
+            return;
+        }
+
+        broadcastAction(ACTION_INTERSTITIAL_CLICK);
+
+        if (Intents.isNativeBrowserScheme(clickThroughUrl)) {
+            try {
+                final Intent intent = Intents.intentForNativeBrowserScheme(clickThroughUrl);
+                Intents.startActivity(getContext(), intent);
+                return;
+            } catch (UrlParseException e) {
+                MoPubLog.d(e.getMessage());
+            } catch (IntentNotResolvableException e) {
+                MoPubLog.d("Could not handle intent for URI: " + clickThroughUrl + ". "
+                        + e.getMessage());
+            }
+
+            return;
+        }
+
+        Bundle bundle = new Bundle();
+        bundle.putString(MoPubBrowser.DESTINATION_URL_KEY, clickThroughUrl);
+
+        getBaseVideoViewControllerListener().onStartActivityForResult(MoPubBrowser.class,
+                MOPUB_BROWSER_REQUEST_CODE, bundle);
+    }
+
     private ImageView createCompanionAdImageView(final Context context) {
         RelativeLayout relativeLayout = new RelativeLayout(context);
         relativeLayout.setGravity(Gravity.CENTER);
@@ -443,18 +475,6 @@ public class VastVideoViewController extends BaseVideoViewController implements 
         return imageView;
     }
 
-    private void handleClick(final List<String> clickThroughTrackers, final String clickThroughUrl) {
-        pingOnBackgroundThread(clickThroughTrackers);
-
-        videoClicked();
-
-        Bundle bundle = new Bundle();
-        bundle.putString(MoPubBrowser.DESTINATION_URL_KEY, clickThroughUrl);
-
-        getBaseVideoViewControllerListener().onStartActivityForResult(MoPubBrowser.class,
-                MOPUB_BROWSER_REQUEST_CODE, bundle);
-    }
-
     private boolean isLongVideo(final int duration) {
         return (duration >= MAX_VIDEO_DURATION_FOR_CLOSE_BUTTON);
     }
@@ -470,25 +490,6 @@ public class VastVideoViewController extends BaseVideoViewController implements 
 
     private boolean shouldAllowClickThrough() {
         return mShowCloseButtonEventFired;
-    }
-
-    private void pingOnBackgroundThread(List<String> urls) {
-        if (urls == null) {
-            return;
-        }
-
-        for (final String url : urls) {
-            sThreadPoolExecutor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        HttpUtils.ping(url);
-                    } catch (Exception e) {
-                        Log.d("MoPub", "Unable to track video impression url: " + url);
-                    }
-                }
-            });
-        }
     }
 
     private void startProgressChecker() {
@@ -507,49 +508,71 @@ public class VastVideoViewController extends BaseVideoViewController implements 
 
     // for testing
     @Deprecated
+    @VisibleForTesting
     boolean getIsVideoProgressShouldBeChecked() {
         return mIsVideoProgressShouldBeChecked;
     }
 
     // for testing
     @Deprecated
+    @VisibleForTesting
     int getVideoRetries() {
         return mVideoRetries;
     }
 
     // for testing
     @Deprecated
-    Runnable getVideoProgressCheckerRunnable() {
-        return mVideoProgressCheckerRunnable;
-    }
-
-    // for testing
-    @Deprecated
+    @VisibleForTesting
     int getShowCloseButtonDelay() {
         return mShowCloseButtonDelay;
     }
 
     // for testing
     @Deprecated
+    @VisibleForTesting
     boolean isShowCloseButtonEventFired() {
         return mShowCloseButtonEventFired;
     }
 
     // for testing
     @Deprecated
+    @VisibleForTesting
     void setCloseButtonVisible(boolean visible) {
         mShowCloseButtonEventFired = visible;
     }
 
     // for testing
     @Deprecated
+    @VisibleForTesting
     boolean isVideoFinishedPlaying() {
         return mIsVideoFinishedPlaying;
     }
 
     // for testing
     @Deprecated
+    @VisibleForTesting
     ImageView getCompanionAdImageView() {
         return mCompanionAdImageView;
+    }
+
+    // for testing
+    @Deprecated
+    @VisibleForTesting
+    void setFinalMarkHit() {
+        mIsFinalMarkHit = true;
+    }
+
+    // for testing
+    @Deprecated
+    @VisibleForTesting
+    void setVideoError() {
+        mVideoError = true;
+    }
+
+    // for testing
+    @Deprecated
+    @VisibleForTesting
+    boolean getVideoError() {
+        return mVideoError;
     }
 }

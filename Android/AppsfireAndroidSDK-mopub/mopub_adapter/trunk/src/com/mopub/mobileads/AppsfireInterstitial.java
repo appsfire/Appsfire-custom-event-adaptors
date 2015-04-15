@@ -23,7 +23,7 @@ import static com.mopub.mobileads.MoPubErrorCode.ADAPTER_CONFIGURATION_ERROR;
  */
 public class AppsfireInterstitial extends CustomEventInterstitial implements AFAdSDKEventsDelegate {
 	/** Tag for logging messages */
-	public static String CLASS_TAG = "AppsfireInterstitial";
+	public static String CLASS_TAG = "Appsfire.CustomEventInterstitial";
 	
     /*
      * These keys are intended for MoPub internal use. Do not modify.
@@ -39,6 +39,7 @@ public class AppsfireInterstitial extends CustomEventInterstitial implements AFA
 	private static AFAdSDK adSdk;
 
     public AppsfireInterstitial() {
+    	Log.d (CLASS_TAG, "new AppsfireInterstitial");
     	mHandler = new Handler();
     }
 
@@ -47,7 +48,10 @@ public class AppsfireInterstitial extends CustomEventInterstitial implements AFA
                                     CustomEventInterstitialListener customEventInterstitialListener,
                                     Map<String, Object> localExtras,
                                     Map<String, String> serverExtras) {
+    	Log.d (CLASS_TAG, "loadInterstitial");
+    	
         if (!(context instanceof Activity)) {
+        	Log.d (CLASS_TAG, "loadInterstitial: context isn't an Activity, fail");
             customEventInterstitialListener.onInterstitialFailed(ADAPTER_CONFIGURATION_ERROR);
             return;
         }
@@ -63,20 +67,14 @@ public class AppsfireInterstitial extends CustomEventInterstitial implements AFA
         	isDebug = serverExtras.get(AF_IS_DEBUG).equalsIgnoreCase("0") == false;  
         }
 
-        if (adSdk == null) {
-        	// Initialize SDK
-        	adSdk = AFSDKFactory.getAFAdSDK().
-			        setFeatures(Arrays.asList(AFSDKFeature.AFSDKFeatureMonetization)).
-					setAPIKey(sdkKey).
-					setEventsDelegate(this).
-					setDebugModeEnabled(isDebug);
-        	adSdk.prepare(context);
-        }
+        adSdk = AppsfireCommon.initializeAdSDK(context, sdkKey, isDebug);
+       	adSdk.addEventsDelegate(this);
     }
 
     @Override
     protected void showInterstitial() {
     	// Check if a modal ad of type Sushi is available
+    	Log.d (CLASS_TAG, "showInterstitial");
 		if (adSdk.isAModalAdOfTypeAvailable(AFAdSDKModalType.AFAdSDKModalTypeSushi)) {
 			try {
 				// Request modal ad
@@ -135,6 +133,12 @@ public class AppsfireInterstitial extends CustomEventInterstitial implements AFA
 	public void onInStreamAdAvailable() {
 		// One or more in-stream (sashimi) ads are available
 		Log.i (CLASS_TAG, "onInStreamAdAvailable");
+	}
+		
+	@Override
+	public void onNativeAdAvailable() {
+		// One or more native ads are available
+		Log.i (CLASS_TAG, "onNativeAdAvailable");
 	}
 		
 	@Override
