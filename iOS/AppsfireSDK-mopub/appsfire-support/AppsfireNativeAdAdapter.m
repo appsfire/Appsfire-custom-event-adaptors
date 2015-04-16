@@ -64,6 +64,11 @@
         if (self.afNativeAd.starRating != nil) {
             [properties setObject:self.afNativeAd.starRating forKey:kAdStarRatingKey];
         }
+        
+        // category
+        if (self.afNativeAd.category != nil) {
+            [properties setObject:self.afNativeAd.category forKey:@"category"];
+        }
 
         //
         _properties = properties;
